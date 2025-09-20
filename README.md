@@ -189,6 +189,7 @@
 │   ├── qq_email_imap.py # 邮件获取脚本 / Email fetching script
 │   └── get_email_body_by_id.py # 邮件正文获取脚本 / Email body fetching script
 ├── config.json          # 系统配置文件 / System configuration file
+├── log.txt              # 系统日志文件 / System log file
 ├── start_fast.bat       # 启动脚本 / Startup script
 ├── requirements.txt     # Python依赖配置 / Python dependencies
 ├── package.json         # Node.js依赖配置 / Node.js dependencies
