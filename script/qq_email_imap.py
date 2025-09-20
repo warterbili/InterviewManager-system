@@ -13,8 +13,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import config
 
 # 配置日志
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8')
-logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8')
+# logger = logging.getLogger(__name__)
 
 def connect_to_qq_mail(email, password, imap_server):
     """连接到邮箱并登录"""
@@ -25,10 +25,10 @@ def connect_to_qq_mail(email, password, imap_server):
         # 使用邮箱地址和授权码登录
         client.login(email, password)
         
-        logger.info(f"Successfully connected and logged in to email: {email}")
+        # logger.info(f"Successfully connected and logged in to email: {email}")
         return client
     except Exception as e:
-        logger.error(f"Failed to connect to email: {e}")
+        # logger.error(f"Failed to connect to email: {e}")
         raise
 
 def get_email_body(msg):
@@ -65,13 +65,13 @@ def get_email_body(msg):
                     if content_type == "text/plain":
                         break
                 except Exception as e:
-                    logger.warning(f"解码邮件内容时出错: {e}")
+                    # logger.warning(f"解码邮件内容时出错: {e}")
                     continue
     else:
         try:
             body = decode_content(msg.get_payload(decode=True), msg.get_content_charset())
         except Exception as e:
-            logger.warning(f"解码单部分邮件内容时出错: {e}")
+            # logger.warning(f"解码单部分邮件内容时出错: {e}")
             body = ""
     
     return body[:10000] + "..." if len(body) > 10000 else body
@@ -107,7 +107,7 @@ def save_emails_to_database(emails, db_config):
                 """)
                 
                 if not emails:
-                    logger.info("No emails to save to database")
+                    # logger.info("No emails to save to database")
                     return 0
                 
                 insert_query = """
@@ -122,28 +122,28 @@ def save_emails_to_database(emails, db_config):
                     for e in emails
                 ]
                 
-                logger.info(f"Preparing to insert {len(email_data)} emails into database")
+                # logger.info(f"Preparing to insert {len(email_data)} emails into database")
                 batch_size = 100
                 inserted_count = 0
                 for i in range(0, len(email_data), batch_size):
                     batch = email_data[i:i+batch_size]
-                    logger.debug(f"Inserting batch {i//batch_size + 1}: {len(batch)} emails")
+                    # logger.debug(f"Inserting batch {i//batch_size + 1}: {len(batch)} emails")
                     result = cursor.executemany(insert_query, batch)
                     # executemany的返回值是受影响的行数，对于INSERT IGNORE，这表示实际插入的行数
                     inserted_count += result
-                    logger.info(f"Batch inserted {result} emails, total {inserted_count} emails")
+                    # logger.info(f"Batch inserted {result} emails, total {inserted_count} emails")
                 
-                logger.info(f"Successfully inserted {inserted_count} emails")
+                # logger.info(f"Successfully inserted {inserted_count} emails")
                 return inserted_count
     except Exception as e:
-        logger.error(f"Database connection or operation failed: {e}")
+        # logger.error(f"Database connection or operation failed: {e}")
         return 0
 
 def fetch_emails(client, start_date=None, end_date=None, email_address=None):
     """获取邮件"""
     try:
         client.select_folder('INBOX')
-        logger.info("Selected INBOX folder")
+        # logger.info("Selected INBOX folder")
         
         # 构建搜索条件
         search_criteria = ['ALL']
@@ -152,32 +152,32 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                 start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
                 end_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d") + datetime.timedelta(days=1)
                 search_criteria = ['SINCE', start_dt, 'BEFORE', end_dt]
-                logger.info(f"Searching with date range: {start_date} to {end_date}")
+                # logger.info(f"Searching with date range: {start_date} to {end_date}")
             except ValueError as e:
-                logger.error(f"Invalid date format: {e}")
+                # logger.error(f"Invalid date format: {e}")
         
         email_ids = client.search(search_criteria)
-        logger.info(f"Found {len(email_ids)} emails")
+        # logger.info(f"Found {len(email_ids)} emails")
         
         # 限制处理数量
         max_emails = 1000
         if len(email_ids) > max_emails:
-            logger.info(f"Will process first {max_emails} emails")
+            # logger.info(f"Will process first {max_emails} emails")
             email_ids = email_ids[:max_emails]
         
         emails = []
         batch_size = 50
-        logger.info(f"Start processing emails, total {len(email_ids)} emails")
+        # logger.info(f"Start processing emails, total {len(email_ids)} emails")
         for i in range(0, len(email_ids), batch_size):
             batch_ids = email_ids[i:i+batch_size]
-            logger.info(f"Processing batch {i//batch_size + 1}: email ID range {min(batch_ids)}-{max(batch_ids)}")
+            # logger.info(f"Processing batch {i//batch_size + 1}: email ID range {min(batch_ids)}-{max(batch_ids)}")
             
             try:
                 msg_data = client.fetch(batch_ids, ['RFC822'])
-                logger.info(f"Successfully fetched email data for batch {i//batch_size + 1}")
+                # logger.info(f"Successfully fetched email data for batch {i//batch_size + 1}")
                 for msg_id in batch_ids:
                     if msg_id not in msg_data or b'RFC822' not in msg_data[msg_id]:
-                        logger.warning(f"No data found for email ID {msg_id}")
+                        # logger.warning(f"No data found for email ID {msg_id}")
                         continue
                     
                     msg = email.message_from_bytes(msg_data[msg_id][b'RFC822'])
@@ -199,7 +199,7 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                     
                     # 过滤自己发送的邮件
                     if email_address and email_address in sender:
-                        logger.info(f"Skipping self-sent email: {subject[:50]}...")
+                        # logger.info(f"Skipping self-sent email: {subject[:50]}...")
                         continue
                     
                     email_info = {
@@ -211,16 +211,16 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                         'body': body or ''
                     }
                     emails.append(email_info)
-                    logger.debug(f"Successfully processed email: {subject[:50]}...")
+                    # logger.debug(f"Successfully processed email: {subject[:50]}...")
             except Exception as e:
                 logger.error(f"Error fetching email batch data: {e}")
                 continue
         
-        logger.info(f"Email processing completed, processed {len(emails)} emails")
+        # logger.info(f"Email processing completed, processed {len(emails)} emails")
         return emails
         
     except Exception as e:
-        logger.error(f"Error fetching emails: {e}")
+        # logger.error(f"Error fetching emails: {e}")
         return []
 
 def main():
@@ -249,34 +249,34 @@ def main():
         return 0
     
     try:
-        logger.info(f"Connecting to email: {email}@{imap_server}")
+        # logger.info(f"Connecting to email: {email}@{imap_server}")
         if start_date and end_date:
-            logger.info(f"Searching with date range: {start_date} to {end_date}")
+            # logger.info(f"Searching with date range: {start_date} to {end_date}")
         
         mail = connect_to_qq_mail(email, password, imap_server)
-        logger.info("Start fetching emails...")
+        # logger.info("Start fetching emails...")
         emails = fetch_emails(mail, start_date, end_date, email)
-        logger.info(f"Email fetching completed, fetched {len(emails)} emails")
+        # logger.info(f"Email fetching completed, fetched {len(emails)} emails")
         
         try:
             mail.logout()
-            logger.info("Email connection closed")
+            # logger.info("Email connection closed")
         except Exception as e:
-            logger.warning(f"Error closing email connection: {e}")
+            # logger.warning(f"Error closing email connection: {e}")
         
         if not emails:
-            logger.info("No emails fetched")
+            # logger.info("No emails fetched")
             print("没有获取到任何邮件")  # 确保输出到stdout
             return 0
         
-        logger.info(f"Start saving {len(emails)} emails to database...")
+        # logger.info(f"Start saving {len(emails)} emails to database...")
         inserted_count = save_emails_to_database(emails, db_config)
-        logger.info(f"Email saving completed, inserted {inserted_count} new emails")
+        # logger.info(f"Email saving completed, inserted {inserted_count} new emails")
         print(f"成功插入 {inserted_count} 封邮件")  # 确保输出到stdout
         return inserted_count
         
     except Exception as e:
-        logger.error(f"Error occurred: {e}")
+        # logger.error(f"Error occurred: {e}")
         print(f"发生错误: {e}")  # 确保输出到stdout
         return 0
 

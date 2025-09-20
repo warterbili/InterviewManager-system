@@ -135,9 +135,9 @@ async function initDatabase() {
             await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion) VALUES ?', [defaultData]);
         }
     
-        console.log('数据库初始化成功');
+        // console.log('数据库初始化成功');
     } catch (err) {
-        console.error('数据库初始化失败:', err);
+        // console.error('数据库初始化失败:', err);
     }
 }
 
@@ -152,6 +152,8 @@ app.get('/api/config', async (req, res) => {
 app.post('/api/config', async (req, res) => {
     try {
         await saveConfig(req.body);
+        // 重新初始化数据库连接
+        await initDatabase();
         res.json({ message: '配置更新成功', config });
     } catch (err) {
         res.status(500).json({ error: '配置更新失败: ' + err.message });
@@ -175,7 +177,7 @@ app.get('/api/interviews', async (req, res) => {
         }));
         res.json(data);
     } catch (err) {
-        console.error('获取面试数据失败:', err);
+        // console.error('获取面试数据失败:', err);
         res.status(500).json({ error: '获取面试数据失败' });
     }
 });
@@ -202,7 +204,7 @@ app.post('/api/interviews', async (req, res) => {
     
         res.json({ message: '面试数据保存成功' });
     } catch (err) {
-        console.error('保存面试数据失败:', err);
+        // console.error('保存面试数据失败:', err);
         res.status(500).json({ error: '保存面试数据失败' });
     }
 });
@@ -217,7 +219,7 @@ app.get('/api/emails', async (req, res) => {
         const [rows] = await emailDb.query('SELECT * FROM all_emails ORDER BY send_date DESC');
         res.json(rows);
     } catch (err) {
-        console.error('获取邮件数据失败:', err);
+        // console.error('获取邮件数据失败:', err);
         res.status(500).json({ error: '获取邮件数据失败' });
     }
 });
@@ -242,7 +244,7 @@ app.get('/api/emails/search', async (req, res) => {
     
         res.json(rows);
     } catch (err) {
-        console.error('搜索邮件数据失败:', err);
+        // console.error('搜索邮件数据失败:', err);
         res.status(500).json({ error: '搜索邮件数据失败' });
     }
 });
@@ -265,7 +267,7 @@ app.delete('/api/emails/:id', async (req, res) => {
     
         res.json({ message: '邮件删除成功' });
     } catch (err) {
-        console.error('删除邮件失败:', err);
+        // console.error('删除邮件失败:', err);
         res.status(500).json({ error: '删除邮件失败' });
     }
 });
@@ -301,29 +303,29 @@ app.get('/api/emails/:id/body/realtime', async (req, res) => {
     
         pythonProcess.stdout.on('data', (data) => {
           stdoutData += data.toString();
-          console.log(`获取邮件正文脚本输出: ${data.toString().trim()}`);
+          // console.log(`获取邮件正文脚本输出: ${data.toString().trim()}`);
         });
     
         pythonProcess.stderr.on('data', (data) => {
           stderrData += data.toString();
-          console.log(`获取邮件正文脚本日志: ${data.toString().trim()}`);
+          // console.log(`获取邮件正文脚本日志: ${data.toString().trim()}`);
         });
     
         pythonProcess.on('close', (code) => {
             if (code === 0) {
                 res.json({ body: stdoutData });
             } else {
-                console.error(`获取邮件正文脚本执行失败，退出码: ${code}`, stderrData);
+                // console.error(`获取邮件正文脚本执行失败，退出码: ${code}`, stderrData);
                 res.status(500).json({ error: '获取邮件正文失败', details: stderrData });
             }
         });
     
         pythonProcess.on('error', (error) => {
-            console.error('执行获取邮件正文脚本时出错:', error);
+            // console.error('执行获取邮件正文脚本时出错:', error);
             res.status(500).json({ error: '无法启动获取邮件正文脚本', details: error.message });
         });
     } catch (err) {
-        console.error('获取邮件正文失败:', err);
+        // console.error('获取邮件正文失败:', err);
         res.status(500).json({ error: '获取邮件正文失败' });
     }
 });
@@ -353,7 +355,7 @@ app.post('/api/fetch-emails', async (req, res) => {
             args.push(startDate, endDate);
         }
     
-        console.log(`正在执行邮件获取脚本: ${scriptPath}`, args);
+        // console.log(`正在执行邮件获取脚本: ${scriptPath}`, args);
     
         const pythonProcess = spawn(pythonPath, args, {
             cwd: __dirname
@@ -365,12 +367,12 @@ app.post('/api/fetch-emails', async (req, res) => {
         // 设置子进程超时
         const timeout = setTimeout(() => {
             pythonProcess.kill('SIGTERM');
-            console.log('邮件获取脚本执行超时，已发送终止信号');
+            // console.log('邮件获取脚本执行超时，已发送终止信号');
       
             // 如果SIGTERM不起作用，1秒后发送SIGKILL
             const forceKillTimeout = setTimeout(() => {
                 pythonProcess.kill('SIGKILL');
-                console.log('邮件获取脚本强制终止');
+                // console.log('邮件获取脚本强制终止');
             }, 1000);
       
             pythonProcess.on('exit', () => {
@@ -382,19 +384,19 @@ app.post('/api/fetch-emails', async (req, res) => {
             stdoutData += data.toString();
             // 实时记录进度信息
             const dataStr = data.toString();
-            console.log(`邮件获取脚本输出: ${dataStr.trim()}`);
+            // console.log(`邮件获取脚本输出: ${dataStr.trim()}`);
         });
     
         pythonProcess.stderr.on('data', (data) => {
             stderrData += data.toString();
-            console.log(`邮件获取脚本日志: ${data.toString().trim()}`);
+            // console.log(`邮件获取脚本日志: ${data.toString().trim()}`);
         });
     
         pythonProcess.on('close', (code, signal) => {
             clearTimeout(timeout); // 清除超时定时器
       
             if (signal === 'SIGTERM' || signal === 'SIGKILL') {
-                console.log('邮件获取脚本被终止');
+                // console.log('邮件获取脚本被终止');
                 res.status(408).json({ 
                     success: false, 
                     message: '邮件获取超时，已终止操作', 
@@ -405,11 +407,11 @@ app.post('/api/fetch-emails', async (req, res) => {
       
             if (code === 0) {
                 let insertedCount = 0;
-                console.log('stdoutData:', stdoutData); // 调试日志
+                // console.log('stdoutData:', stdoutData); // 调试日志
                 
                 // 尝试匹配"成功插入 X 封邮件"格式（中文）
                 const insertedMatch = stdoutData.match(/成功插入\s+(\d+)\s+封邮件/);
-                console.log('insertedMatch:', insertedMatch); // 调试日志
+                // console.log('insertedMatch:', insertedMatch); // 调试日志
                 if (insertedMatch) {
                     insertedCount = parseInt(insertedMatch[1]);
                 }
@@ -417,7 +419,7 @@ app.post('/api/fetch-emails', async (req, res) => {
                 // 尝试匹配"没有获取到任何邮件"格式（中文）
                 if (insertedCount === 0) {
                     const noEmailsMatch = stdoutData.match(/没有获取到任何邮件/);
-                    console.log('noEmailsMatch:', noEmailsMatch); // 调试日志
+                    // console.log('noEmailsMatch:', noEmailsMatch); // 调试日志
                     if (noEmailsMatch) {
                         insertedCount = 0;
                     }
@@ -426,7 +428,7 @@ app.post('/api/fetch-emails', async (req, res) => {
                 // 尝试匹配数字格式（从任何包含数字的行中提取）
                 if (insertedCount === 0) {
                     const numberMatch = stdoutData.match(/(\d+)/);
-                    console.log('numberMatch:', numberMatch); // 调试日志
+                    // console.log('numberMatch:', numberMatch); // 调试日志
                     if (numberMatch) {
                         insertedCount = parseInt(numberMatch[1]);
                     }
@@ -434,17 +436,17 @@ app.post('/api/fetch-emails', async (req, res) => {
                 
                 // 尝试匹配脚本执行完成的返回值
                 const scriptCompleteMatch = stdoutData.match(/脚本执行完成，返回值:\s+(\d+)/);
-                console.log('scriptCompleteMatch:', scriptCompleteMatch); // 调试日志
+                // console.log('scriptCompleteMatch:', scriptCompleteMatch); // 调试日志
                 if (scriptCompleteMatch) {
                     insertedCount = parseInt(scriptCompleteMatch[1]);
                 }
                 
-                console.log('最终insertedCount:', insertedCount); // 调试日志
-                console.log('返回的JSON:', { 
-                    success: true, 
-                    message: `邮件获取完成，新增 ${insertedCount} 封邮件`, 
-                    insertedCount: insertedCount
-                }); // 调试日志
+                // console.log('最终insertedCount:', insertedCount); // 调试日志
+                // console.log('返回的JSON:', { 
+                //     success: true, 
+                //     message: `邮件获取完成，新增 ${insertedCount} 封邮件`, 
+                //     insertedCount: insertedCount
+                // }); // 调试日志
         
                 res.json({ 
                     success: true, 
@@ -462,7 +464,7 @@ app.post('/api/fetch-emails', async (req, res) => {
     
         pythonProcess.on('error', (error) => {
             clearTimeout(timeout); // 清除超时定时器
-            console.error('执行邮件获取脚本时出错:', error);
+            // console.error('执行邮件获取脚本时出错:', error);
             res.status(500).json({ 
                 success: false, 
                 message: '无法启动邮件获取脚本', 
@@ -470,7 +472,7 @@ app.post('/api/fetch-emails', async (req, res) => {
             });
         });
     } catch (err) {
-        console.error('获取邮件失败:', err);
+        // console.error('获取邮件失败:', err);
         res.status(500).json({ error: '获取邮件失败' });
     }
 });
@@ -485,7 +487,7 @@ app.get('/api/deliveries', async (req, res) => {
         const [rows] = await deliveryDb.query('SELECT * FROM deliveries ORDER BY delivery_date DESC');
         res.json(rows);
     } catch (err) {
-        console.error('获取投递数据失败:', err);
+        // console.error('获取投递数据失败:', err);
         res.status(500).json({ error: '获取投递数据失败' });
     }
 });
@@ -508,7 +510,7 @@ app.post('/api/deliveries', async (req, res) => {
     
         res.json({ message: '投递记录添加成功', id: result.insertId });
     } catch (err) {
-        console.error('添加投递记录失败:', err);
+        // console.error('添加投递记录失败:', err);
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: '重复的投递记录' });
         }
@@ -544,7 +546,7 @@ app.put('/api/deliveries/:id', async (req, res) => {
     
         res.json({ message: '投递记录更新成功' });
     } catch (err) {
-        console.error('更新投递记录失败:', err);
+        // console.error('更新投递记录失败:', err);
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: '重复的投递记录' });
         }
@@ -570,7 +572,7 @@ app.delete('/api/deliveries/:id', async (req, res) => {
     
         res.json({ message: '投递记录删除成功' });
     } catch (err) {
-        console.error('删除投递记录失败:', err);
+        // console.error('删除投递记录失败:', err);
         res.status(500).json({ error: '删除投递记录失败' });
     }
 });
@@ -601,8 +603,8 @@ loadConfig().then(() => {
     return initDatabase();
 }).then(() => {
     app.listen(PORT, () => {
-        console.log(`服务器运行在 http://localhost:${PORT}`);
+        // console.log(`服务器运行在 http://localhost:${PORT}`);
     });
 }).catch(err => {
-    console.error('启动服务器失败:', err);
+    // console.error('启动服务器失败:', err);
 });

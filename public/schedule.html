@@ -156,18 +156,20 @@
         fetch('/api/config')
             .then(response => response.json())
             .then(config => {
-                // 检查是否至少有一个数据库配置项存在
-                const hasDbConfig = config.db.host || config.db.user || config.db.password;
+                // 检查是否至少有一些基本的数据库配置
+                const hasBasicDbConfig = config.db.host || config.db.user || config.db.password;
                 
-                // 如果没有数据库配置，重定向到配置页面
-                if (!hasDbConfig) {
-                    window.location.href = '/config';
+                // 如果没有任何基本数据库配置，重定向到配置页面，并传递当前页面作为返回URL
+                if (!hasBasicDbConfig) {
+                    const currentUrl = encodeURIComponent(window.location.pathname);
+                    window.location.href = `/config?returnUrl=${currentUrl}`;
                 }
             })
             .catch(error => {
                 console.error('获取配置失败:', error);
-                // 如果获取配置失败，也重定向到配置页面
-                window.location.href = '/config';
+                // 如果获取配置失败，也重定向到配置页面，并传递当前页面作为返回URL
+                const currentUrl = encodeURIComponent(window.location.pathname);
+                window.location.href = `/config?returnUrl=${currentUrl}`;
             });
 
         // API基础URL

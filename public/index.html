@@ -129,6 +129,11 @@
         <div class="container">
             <h1>面试管理系统</h1>
             <p>一站式管理您的求职面试流程，轻松跟踪邮件状态和投递进度</p>
+            <div style="text-align: center; margin-top: 1rem;">
+                <button class="btn btn-primary" onclick="location.href='/config'" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                    修改系统配置
+                </button>
+            </div>
         </div>
     </div>
     
@@ -159,25 +164,28 @@
     </div>
 
     <script>
-        // 检查是否有配置，如果没有则重定向到配置页面
+        // 检查配置是否完整，如果不完整则重定向到配置页面
         document.addEventListener('DOMContentLoaded', function() {
             // 从服务器获取配置
             fetch('/api/config')
                 .then(response => response.json())
                 .then(config => {
-                    // 检查是否至少有一个配置项存在
-                    const hasDbConfig = config.db.host || config.db.user || config.db.password;
-                    const hasEmailConfig = config.email.address || config.email.password || config.email.imap_server;
+                    // 检查数据库配置是否完整（host, user, password是必需的）
+                    const hasDbConfig = config.db.host && config.db.user && config.db.password;
+                    // 检查邮箱配置是否完整
+                    const hasEmailConfig = config.email.address && config.email.password && config.email.imap_server;
                     
-                    // 如果没有任何配置，重定向到配置页面
-                    if (!hasDbConfig && !hasEmailConfig) {
-                        window.location.href = '/config';
+                    // 如果数据库或邮箱配置不完整，则重定向到配置页面
+                    if (!hasDbConfig || !hasEmailConfig) {
+                        const currentUrl = encodeURIComponent(window.location.pathname);
+                        window.location.href = `/config?returnUrl=${currentUrl}`;
                     }
                 })
                 .catch(error => {
                     console.error('获取配置失败:', error);
-                    // 如果获取配置失败，也重定向到配置页面
-                    window.location.href = '/config';
+                    // 如果获取配置失败，也重定向到配置页面，并传递当前页面作为返回URL
+                    const currentUrl = encodeURIComponent(window.location.pathname);
+                    window.location.href = `/config?returnUrl=${currentUrl}`;
                 });
         });
     </script>

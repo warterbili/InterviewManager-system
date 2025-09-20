@@ -37,7 +37,7 @@ export async function loadConfig() {
             config.email = { ...config.email, ...loadedConfig.email };
         }
     } catch (err) {
-        console.error('配置文件加载失败:', err);
+        // console.error('配置文件加载失败:', err);
     }
 }
 

@@ -31,7 +31,8 @@ def load_config():
         config['db'].update(loaded_config.get('db', {}))
         config['email'].update(loaded_config.get('email', {}))
     except Exception as err:
-        print(f'配置文件加载失败: {err}')
+        # print(f'配置文件加载失败: {err}')
+        pass
 
 # 在模块导入时自动加载配置
 load_config()

@@ -214,13 +214,16 @@
         // 保存配置
         document.getElementById('saveConfigBtn').addEventListener('click', function() {
             // 获取表单数据
-            const config = {
-                db_host: document.getElementById('dbHost').value,
-                db_user: document.getElementById('dbUser').value,
-                db_password: document.getElementById('dbPassword').value,
-                db_charset: document.getElementById('dbCharset').value,
-                email_address: document.getElementById('emailAddress').value,
-                email_password: document.getElementById('emailPassword').value,
+            const dbConfig = {
+                host: document.getElementById('dbHost').value,
+                user: document.getElementById('dbUser').value,
+                password: document.getElementById('dbPassword').value,
+                charset: document.getElementById('dbCharset').value
+            };
+            
+            const emailConfig = {
+                address: document.getElementById('emailAddress').value,
+                password: document.getElementById('emailPassword').value,
                 imap_server: document.getElementById('imapServer').value
             };
             
@@ -231,25 +234,26 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    db: {
-                        host: config.db_host,
-                        user: config.db_user,
-                        password: config.db_password,
-                        charset: config.db_charset
-                    },
-                    email: {
-                        address: config.email_address,
-                        password: config.email_password,
-                        imap_server: config.imap_server
-                    }
+                    db: dbConfig,
+                    email: emailConfig
                 })
             })
             .then(response => response.json())
             .then(data => {
                 showAlert('配置保存成功！', 'success');
-                // 保存成功后重定向到主页
+                // 保存成功后重定向到原来的页面或主页
                 setTimeout(() => {
-                    window.location.href = '/';
+                    // 从URL参数中获取返回页面
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const returnUrl = urlParams.get('returnUrl');
+                    
+                    if (returnUrl) {
+                        // 跳转到原来的页面
+                        window.location.href = decodeURIComponent(returnUrl);
+                    } else {
+                        // 如果没有指定返回页面，则跳转到主页
+                        window.location.href = '/';
+                    }
                 }, 1000);
             })
             .catch(error => {
