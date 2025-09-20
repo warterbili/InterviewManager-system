@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面试管理系统 - 正在启动</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .loader-container {
+            text-align: center;
+            color: white;
+        }
+
+        .loader {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .loader-ring {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .loader-subtext {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="loader">
+            <div class="loader-ring"></div>
+        </div>
+        <div class="loader-text">正在启动面试管理系统</div>
+        <div class="loader-subtext">请稍候...</div>
+    </div>
+
+    <script>
+        // 检查服务器是否准备就绪
+        function checkServerReady() {
+            fetch('http://localhost:3001/api/config')
+                .then(response => {
+                    if (response.ok) {
+                        // 服务器准备就绪，跳转到主页
+                        window.location.href = 'http://localhost:3001';
+                    } else {
+                        // 服务器还未准备就绪，继续检查
+                        setTimeout(checkServerReady, 300);
+                    }
+                })
+                .catch(() => {
+                    // 服务器还未准备就绪，继续检查
+                    setTimeout(checkServerReady, 300);
+                });
+        }
+        
+        // 开始检查服务器状态
+        checkServerReady();
+    </script>
+</body>
+</html>

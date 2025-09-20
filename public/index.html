@@ -130,8 +130,11 @@
             <h1>面试管理系统</h1>
             <p>一站式管理您的求职面试流程，轻松跟踪邮件状态和投递进度</p>
             <div style="text-align: center; margin-top: 1rem;">
-                <button class="btn btn-primary" onclick="location.href='/config'" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                <button class="btn btn-primary" onclick="location.href='/config'" style="padding: 0.75rem 1.5rem; font-size: 1rem; margin-right: 1rem;">
                     修改系统配置
+                </button>
+                <button class="btn btn-danger" onclick="exitSystem()" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                    退出系统
                 </button>
             </div>
         </div>
@@ -188,6 +191,42 @@
                     window.location.href = `/config?returnUrl=${currentUrl}`;
                 });
         });
+        
+        // 退出系统函数
+        function exitSystem() {
+            if (confirm('确定要退出系统吗？这将关闭服务器并退出程序。')) {
+                // 发送退出请求到服务器
+                fetch('/api/exit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // 尝试关闭浏览器窗口
+                    window.close();
+                    
+                    // 如果window.close()不起作用，则立即跳转到一个空白页面
+                    setTimeout(() => {
+                        document.body.innerHTML = '<div style="text-align:center;margin-top:50px;"><h2>系统已关闭</h2><p>您可以关闭此窗口。</p></div>';
+                        // 防止用户继续操作
+                        document.body.style.pointerEvents = 'none';
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('退出系统时出错:', error);
+                    // 即使出错也尝试关闭窗口
+                    window.close();
+                    // 如果window.close()不起作用，则立即跳转到一个空白页面
+                    setTimeout(() => {
+                        document.body.innerHTML = '<div style="text-align:center;margin-top:50px;"><h2>系统已关闭</h2><p>您可以关闭此窗口。</p></div>';
+                        // 防止用户继续操作
+                        document.body.style.pointerEvents = 'none';
+                    }, 1000);
+                });
+            }
+        }
     </script>
 </body>
 </html>

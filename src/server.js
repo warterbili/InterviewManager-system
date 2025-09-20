@@ -582,6 +582,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
+app.get('/loading', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'loading.html'));
+});
+
 app.get('/schedule', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'schedule.html'));
 });
@@ -596,6 +600,15 @@ app.get('/deliveries', (req, res) => {
 
 app.get('/config', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'config.html'));
+});
+
+// 退出系统接口
+app.post('/api/exit', (req, res) => {
+    res.json({ message: '服务器正在关闭...' });
+    // 延迟关闭服务器，确保响应能发送回去
+    setTimeout(() => {
+        process.exit(0);
+    }, 500);
 });
 
 // 初始化数据库并启动服务器
