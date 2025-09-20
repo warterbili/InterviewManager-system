@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面试管理系统</title>
+    <link rel="stylesheet" href="./common.css">
+    <style>
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .header h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .header p {
+            text-align: center;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0.5rem auto 0;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin-top: 2rem;
+        }
+
+        .nav-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--box-shadow-sm);
+            transition: var(--transition);
+            cursor: pointer;
+            border: 1px solid var(--gray-200);
+        }
+
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+            border-color: var(--primary-color);
+        }
+
+        .nav-card:hover .icon {
+            transform: scale(1.1);
+        }
+
+        .icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            transition: var(--transition);
+        }
+
+        .nav-card h2 {
+            color: var(--gray-800);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .nav-card p {
+            color: var(--gray-600);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--gray-600);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1.5rem 0;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .nav-card {
+                padding: 1.5rem;
+            }
+            
+            .icon {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .nav-card {
+                padding: 1.25rem;
+            }
+            
+            .nav-card h2 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>面试管理系统</h1>
+            <p>一站式管理您的求职面试流程，轻松跟踪邮件状态和投递进度</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="nav-grid">
+            <div class="nav-card" onclick="location.href='/schedule'">
+                <div class="icon">📅</div>
+                <h2>面试日程安排</h2>
+                <p>管理您的面试日程，包括公司、岗位、时间等信息。可以标记准备状态和完成情况。</p>
+            </div>
+            
+            <div class="nav-card" onclick="location.href='/emails'">
+                <div class="icon">📧</div>
+                <h2>企业邮件跟踪</h2>
+                <p>跟踪企业发送的各类邮件，包括面试邀请、笔试通知、评测结果等。</p>
+            </div>
+            
+            <div class="nav-card" onclick="location.href='/deliveries'">
+                <div class="icon">📋</div>
+                <h2>企业投递汇总</h2>
+                <p>记录和管理您的企业投递情况，包括投递时间、状态等信息。</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2025 面试管理系统 - 助您轻松管理求职过程</p>
+        </div>
+    </div>
+
+    <script>
+        // 检查是否有配置，如果没有则重定向到配置页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查是否至少有一个配置项存在
+            const hasDbConfig = localStorage.getItem('db_host') || localStorage.getItem('db_user') || localStorage.getItem('db_password');
+            const hasEmailConfig = localStorage.getItem('email_address') || localStorage.getItem('email_password') || localStorage.getItem('imap_server');
+            
+            // 如果没有任何配置，重定向到配置页面
+            if (!hasDbConfig && !hasEmailConfig) {
+                window.location.href = '/config';
+            }
+        });
+    </script>
+</body>
+</html>

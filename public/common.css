@@ -1,0 +1,274 @@
+/* 面试管理系统样式 */
+:root {
+  --primary-color: #4361ee;
+  --primary-dark: #3a56d4;
+  --secondary-color: #4cc9f0;
+  --success-color: #4caf50;
+  --success-dark: #449d44;
+  --danger-color: #f44336;
+  --danger-dark: #d32f2f;
+  --warning-color: #ff9800;
+  --warning-dark: #e68a00;
+  --info-color: #2196f3;
+  --info-dark: #1a7ab7;
+  --light-color: #f8f9fa;
+  --dark-color: #212529;
+  --gray-100: #f8f9fa;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
+  --border-radius: 8px;
+  --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --box-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --transition: all 0.3s ease-in-out;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--gray-800);
+  background-color: var(--gray-100);
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.page-header h1 {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.back-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  background-color: var(--primary-dark);
+  text-decoration: none;
+  color: white;
+}
+
+.card {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin: 0;
+}
+
+/* Base button styles */
+.btn {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: var(--transition);
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+/* Button variants */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: var(--success-dark);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-dark);
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: var(--warning-dark);
+}
+
+.btn-info {
+  background-color: var(--info-color);
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: var(--info-dark);
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow-sm);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+th {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+td {
+  border: 1px solid var(--gray-200);
+  padding: 1rem;
+}
+
+tr:nth-child(even) {
+  background-color: var(--gray-100);
+}
+
+tr:hover {
+  background-color: #e9f7fe;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.message {
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  display: none;
+}
+
+.message.show {
+  display: block;
+}
+
+.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+  
+  .page-header {
+    padding: 1.5rem 0;
+  }
+  
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .card {
+    padding: 1rem;
+  }
+  
+  th, td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .card-header h2 {
+    font-size: 1.25rem;
+  }
+}

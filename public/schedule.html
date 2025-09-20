@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>面试日程安排</title>
+    <link rel="stylesheet" href="./common.css">
+    <style>
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: var(--gray-100);
+            border-radius: var(--border-radius);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="datetime-local"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus, input[type="datetime-local"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+
+        input[type="checkbox"] {
+            transform: scale(1.3);
+            cursor: pointer;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-prepared {
+            background-color: var(--success-color);
+        }
+
+        .status-completed {
+            background-color: var(--info-color);
+        }
+
+        .status-pending {
+            background-color: var(--warning-color);
+        }
+
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div class="container">
+            <h1>面试日程安排</h1>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/" class="back-btn">
+                ← 返回主页
+            </a>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2>面试日程列表</h2>
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="sortOrder">排序方式:</label>
+                    <select id="sortOrder" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
+                        <option value="asc">时间升序（最早优先）</option>
+                        <option value="desc">时间降序（最新优先）</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label> </label>
+                    <div class="action-buttons" style="margin: 0;">
+                        <button type="button" class="btn btn-success" onclick="addRow()" style="min-height: calc(2.25rem + 2px);">
+                            + 添加面试
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="saveData()" style="min-height: calc(2.25rem + 2px);">
+                            保存数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="message"></div>
+            
+            <form id="interviewForm">
+                <div class="table-container">
+                    <table id="interviewTable">
+                        <thead>
+                            <tr>
+                                <th>公司名称</th>
+                                <th>岗位</th>
+                                <th>面试时间</th>
+                                <th>准备状态</th>
+                                <th>完成情况</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 数据将从后端API加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 检查配置，如果没有则重定向到配置页面
+        if (!localStorage.getItem('db_host') && !localStorage.getItem('db_user') && !localStorage.getItem('db_password') &&
+            !localStorage.getItem('email_address') && !localStorage.getItem('email_password') && !localStorage.getItem('imap_server')) {
+            window.location.href = '/config';
+        }
+
+        // API基础URL
+        const API_BASE = '/api';
+        
+        // 显示消息函数
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type + ' show';
+            
+            // 3秒后自动清除消息
+            setTimeout(() => {
+                messageEl.textContent = '';
+                messageEl.className = '';
+            }, 3000);
+        }
+
+        // 页面加载时从后端API获取数据
+        window.onload = function() {
+            // 为排序选择器添加事件监听器
+            document.getElementById('sortOrder').addEventListener('change', function() {
+                const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+                const rows = Array.from(table.rows);
+                
+                // 按时间排序
+                sortTableRows(rows);
+            });
+            
+            loadData();
+        };
+
+        // 按时间排序表格行
+        function sortTableRows(rows) {
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            rows.sort((a, b) => {
+                // 获取每行的时间输入框的值
+                const dateInputA = a.cells[2].getElementsByTagName('input')[0];
+                const dateInputB = b.cells[2].getElementsByTagName('input')[0];
+                
+                const dateA = dateInputA && dateInputA.value ? new Date(dateInputA.value) : new Date(0);
+                const dateB = dateInputB && dateInputB.value ? new Date(dateInputB.value) : new Date(0);
+                
+                if (sortOrder === 'asc') {
+                    return dateA - dateB;
+                } else {
+                    return dateB - dateA;
+                }
+            });
+            
+            // 重新排列行
+            const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+            rows.forEach(row => table.appendChild(row));
+        }
+
+        // 从后端API加载数据
+        function loadData() {
+            const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+            
+            // 显示加载状态
+            table.innerHTML = '<tr><td colspan="6" style="text-align: center;">正在加载数据...</td></tr>';
+            showMessage('正在加载面试日程数据...', 'loading');
+            
+            fetch(`${API_BASE}/interviews`)
+                .then(response => response.json())
+                .then(data => {
+                    // 清空现有数据
+                    table.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        table.innerHTML = '<tr><td colspan="6" style="text-align: center;">暂无面试日程数据</td></tr>';
+                        showMessage('加载完成，暂无面试日程数据', 'success');
+                        return;
+                    }
+                    
+                    data.forEach(item => {
+                        addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion);
+                    });
+                    
+                    // 获取排序顺序
+                    const sortOrder = document.getElementById('sortOrder').value;
+                    
+                    // 获取所有数据行
+                    const rows = Array.from(table.rows);
+                    
+                    // 按时间排序
+                    sortTableRows(rows);
+                    
+                    showMessage(`加载完成，共找到 ${data.length} 条面试日程`, 'success');
+                })
+                .catch(error => {
+                    console.error('加载数据失败:', error);
+                    table.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">加载数据失败: ' + error.message + '</td></tr>';
+                    showMessage('加载数据失败: ' + error.message, 'error');
+                });
+        }
+
+        // 添加带数据的新行
+        function addRowWithData(company, position, datetime, preparation, completion) {
+            const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            
+            newRow.innerHTML = `
+                <td><input type="text" value="${company || ''}"></td>
+                <td><input type="text" value="${position || ''}"></td>
+                <td><input type="datetime-local" value="${datetime || ''}"></td>
+                <td><input type="checkbox" ${preparation ? 'checked' : ''}></td>
+                <td><input type="checkbox" ${completion ? 'checked' : ''}></td>
+                <td class="action-buttons">
+                    <button type="button" class="btn btn-danger" onclick="deleteRow(this)">删除</button>
+                </td>
+            `;
+        }
+        
+        // 添加空行
+        function addRow() {
+            addRowWithData('', '', '', false, false);
+            showMessage('已添加新行，请填写面试信息', 'success');
+            
+            // 获取所有数据行
+            const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+            const rows = Array.from(table.rows);
+            
+            // 按时间排序
+            sortTableRows(rows);
+        }
+        
+        // 删除行
+        function deleteRow(button) {
+            if (confirm('确定要删除这条面试记录吗？')) {
+                const row = button.closest('tr');
+                row.parentNode.removeChild(row);
+                // 显示正在删除的消息
+                showMessage('正在删除记录...', 'loading');
+                // 自动保存更改
+                saveData();
+            }
+        }
+        
+        // 保存数据到后端
+        function saveData() {
+            const table = document.getElementById("interviewTable");
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            const data = [];
+            
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                const company = cells[0].getElementsByTagName('input')[0].value;
+                const position = cells[1].getElementsByTagName('input')[0].value;
+                const datetime = cells[2].getElementsByTagName('input')[0].value;
+                const preparation = cells[3].getElementsByTagName('input')[0].checked;
+                const completion = cells[4].getElementsByTagName('input')[0].checked;
+                
+                data.push({
+                    company: company,
+                    position: position,
+                    datetime: datetime,
+                    preparation: preparation,
+                    completion: completion
+                });
+            }
+            
+            // 显示正在保存的消息
+            showMessage('正在保存数据...', 'loading');
+            
+            // 发送到后端API
+            fetch(`${API_BASE}/interviews`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                showMessage(`数据保存成功！共保存 ${data.length} 条记录`, 'success');
+            })
+            .catch(error => {
+                console.error('保存数据失败:', error);
+                showMessage('保存数据失败: ' + error.message, 'error');
+            });
+        }
+        
+        // 监听输入变化并自动保存
+        document.addEventListener('input', function(e) {
+            if (e.target.tagName === 'INPUT') {
+                // 延迟保存，避免过于频繁
+                clearTimeout(window.saveTimeout);
+                window.saveTimeout = setTimeout(saveData, 1000);
+            }
+        });
+        
+        // 监听复选框变化并自动保存
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox') {
+                saveData();
+            }
+        });
+    </script>
+</body>
+</html>

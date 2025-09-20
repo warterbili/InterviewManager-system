@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业邮件状态跟踪</title>
+    <link rel="stylesheet" href="./common.css">
+    <style>
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: var(--gray-100);
+            border-radius: var(--border-radius);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="date"], select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            box-sizing: border-box;
+            min-height: calc(2.25rem + 2px);
+        }
+
+        input[type="text"]:focus, input[type="date"]:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+
+        .select-checkbox {
+            transform: scale(1.3);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-style: italic;
+            color: var(--gray-600);
+        }
+
+        .email-content {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: white;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow-sm);
+        }
+
+        .email-content-text {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* 邮件弹窗样式 */
+        .modal {
+            display: block;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 2rem auto;
+            padding: 0;
+            border: none;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+        }
+
+        .modal-title-bar {
+            margin: 0;
+            padding: 1rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: move;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: calc(80vh - 100px);
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-actions {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+
+        .form-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+            }
+            
+            .tabs {
+                gap: 0.25rem;
+            }
+            
+            .tab {
+                padding: 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-header">
+        <div class="container">
+            <h1>企业邮件状态跟踪</h1>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/" class="back-btn">
+                ← 返回主页
+            </a>
+        </div>
+        
+        <div id="mainContent">
+            <div class="card">
+                <div class="card-header">
+                    <h2>邮件管理</h2>
+                </div>
+                
+                <!-- 分类标签已移除，因为我们现在使用搜索功能 -->
+                
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="searchKeyword">搜索:</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="searchKeyword" placeholder="输入关键词搜索邮件主题或正文" style="flex: 1; min-height: calc(2.25rem + 2px);">
+                            <button id="searchBtn" class="btn btn-primary" style="min-height: calc(2.25rem + 2px);">搜索</button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="startDate">开始日期:</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="endDate">结束日期:</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="sortOrder">排序方式:</label>
+                        <select id="sortOrder" style="min-height: calc(2.25rem + 2px);">
+                            <option value="desc">时间降序（最新优先）</option>
+                            <option value="asc">时间升序（最早优先）</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label> </label>
+                        <button id="fetchEmailsBtn" class="btn btn-primary" style="min-height: calc(2.25rem + 2px);">获取邮件</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>邮件列表</h2>
+                    <div class="action-buttons" style="float: right; margin-top: -2rem;">
+                        <button class="btn btn-success" onclick="selectAll()">全选</button>
+                        <button class="btn btn-danger" onclick="bulkDeleteEmails()">批量删除</button>
+                    </div>
+                </div>
+                
+                <div id="message"></div>
+                
+                <div class="table-container">
+                    <table id="emailTable">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()"></th>
+                                <th>邮件主题</th>
+                                <th>发件人</th>
+                                <th>发送时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查配置，如果没有则重定向到配置页面
+        if (!localStorage.getItem('db_host') && !localStorage.getItem('db_user') && !localStorage.getItem('db_password') &&
+            !localStorage.getItem('email_address') && !localStorage.getItem('email_password') && !localStorage.getItem('imap_server')) {
+            window.location.href = '/config';
+        }
+
+        // API基础URL
+        const API_BASE = '/api';
+        
+        // 存储当前邮件数据
+        let currentEmails = [];
+        
+        // 显示消息函数
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type + ' show';
+            
+            // loading消息不自动清除，其他消息5秒后自动清除
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                    messageEl.className = '';
+                }, 5000);
+            }
+        }
+
+        // 页面加载时初始化邮件系统
+        window.addEventListener('DOMContentLoaded', function() {
+            initEmailSystem();
+        });
+        
+        // 初始化邮件系统
+        function initEmailSystem() {
+            // 设置默认日期范围（最近7天）
+            const today = new Date();
+            const oneWeekAgo = new Date(today);
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            
+            // 格式化日期为 YYYY-MM-DD
+            const formatDate = (date) => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            document.getElementById('startDate').value = formatDate(oneWeekAgo);
+            document.getElementById('endDate').value = formatDate(today);
+            
+            // 为排序选择器添加事件监听器
+            document.getElementById('sortOrder').addEventListener('change', sortEmails);
+            
+            // 为获取邮件按钮添加事件监听器
+            document.getElementById('fetchEmailsBtn').addEventListener('click', fetchEmails);
+            
+            // 为搜索按钮添加事件监听器
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                loadData();
+            });
+            
+            // 为搜索框添加回车键事件监听器
+            document.getElementById('searchKeyword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadData();
+                }
+            });
+            
+            // 初始加载数据（从数据库获取）
+            loadData();
+            
+            // 分类标签已移除，因为我们现在使用搜索功能
+        }
+        
+        // 获取邮件
+        function fetchEmails() {
+            const btn = document.getElementById('fetchEmailsBtn');
+            const originalText = btn.textContent;
+            btn.textContent = '获取中...';
+            btn.disabled = true;
+            
+            // 获取日期范围
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            // 显示正在获取邮件的消息
+            showMessage('正在获取邮件...', 'loading');
+            
+            // 验证日期
+            if (!startDate || !endDate) {
+                showMessage('请选择开始日期和结束日期', 'error');
+                btn.textContent = originalText;
+                btn.disabled = false;
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                showMessage('开始日期不能晚于结束日期', 'error');
+                btn.textContent = originalText;
+                btn.disabled = false;
+                return;
+            }
+            
+            // 发送请求
+            fetch(`${API_BASE}/fetch-emails`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ startDate, endDate })
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => { throw err; });
+                }
+            })
+            .then(result => {
+                if (result.success) {
+                    showMessage(`邮件获取完成！新增 ${result.insertedCount} 封邮件`, 'success');
+                    // 重新加载邮件数据
+                    loadData();
+                } else {
+                    showMessage(`邮件获取失败: ${result.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('获取邮件失败:', error);
+                showMessage(`获取邮件失败: ${error.message}`, 'error');
+            })
+            .finally(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // 从后端API加载数据
+        function loadData() {
+            const table = document.getElementById("emailTable").getElementsByTagName('tbody')[0];
+            
+            // 显示加载状态
+            table.innerHTML = '<tr><td colspan="5" class="loading">加载中...</td></tr>';
+            
+            // 获取搜索关键词
+            const keyword = document.getElementById('searchKeyword').value;
+            
+            // 显示正在搜索的消息
+            if (keyword) {
+                showMessage('正在搜索邮件...', 'loading');
+            }
+            
+            // 构建API URL
+            let apiUrl = `${API_BASE}/emails`;
+            if (keyword) {
+                apiUrl = `${API_BASE}/emails/search?keyword=${encodeURIComponent(keyword)}`;
+            }
+            
+            fetch(apiUrl)
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                })
+                .then(data => {
+                    // 存储当前邮件数据
+                    currentEmails = data;
+                    
+                    // 获取排序顺序
+                    const sortOrder = document.getElementById('sortOrder').value;
+                    
+                    // 按时间排序
+                    data.sort((a, b) => {
+                        const dateA = new Date(a.send_date || '1970-01-01');
+                        const dateB = new Date(b.send_date || '1970-01-01');
+                        
+                        if (sortOrder === 'asc') {
+                            return dateA - dateB;
+                        } else {
+                            return dateB - dateA;
+                        }
+                    });
+                    
+                    // 清空现有数据
+                    table.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        table.innerHTML = '<tr><td colspan="5" style="text-align: center;">暂无数据</td></tr>';
+                        if (keyword) {
+                            showMessage(`搜索完成，找到 0 封匹配的邮件`, 'success');
+                        }
+                        return;
+                    }
+                    
+                    // 添加数据行
+                    data.forEach(email => {
+                        const row = table.insertRow();
+                        row.dataset.id = email.id;
+                        
+                        const cell1 = row.insertCell(0); // 选择框列
+                        const cell2 = row.insertCell(1); // 主题列
+                        const cell3 = row.insertCell(2); // 发件人列
+                        const cell4 = row.insertCell(3); // 时间列
+                        const cell5 = row.insertCell(4); // 操作列
+                        
+                        cell1.innerHTML = `<input type="checkbox" class="select-checkbox" data-id="${email.id}">`;
+                        cell2.textContent = email.subject || '无主题';
+                        cell3.textContent = email.sender || '未知发件人';
+                        cell4.textContent = formatEmailDate(email.send_date);
+                        
+                        // 添加操作按钮
+                        cell5.innerHTML = `
+                            <div class="action-buttons">
+                                <button class="btn btn-info" onclick="viewEmailBody(${email.id})">查看正文</button>
+                                <button class="btn btn-danger" onclick="deleteEmail(${email.id})">删除</button>
+                            </div>
+                        `;
+                    });
+                    
+                    // 添加批量删除按钮
+                    const bulkDeleteRow = table.insertRow();
+                    const bulkDeleteCell = bulkDeleteRow.insertCell(0);
+                    bulkDeleteCell.colSpan = 5;
+                    bulkDeleteCell.innerHTML = `
+                        <div class="action-buttons">
+                            <button class="btn btn-success" onclick="selectAll()">全选</button>
+                            <button class="btn btn-danger" onclick="bulkDeleteEmails()">批量删除</button>
+                        </div>
+                    `;
+                    
+                    // 显示搜索结果消息
+                    if (keyword) {
+                        showMessage(`搜索完成，找到 ${data.length} 封匹配的邮件`, 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('加载数据失败:', error);
+                    table.innerHTML = `<tr><td colspan="5" class="error">加载数据失败: ${error.message}</td></tr>`;
+                    showMessage(`加载数据失败: ${error.message}`, 'error');
+                });
+        }
+        
+        // 显示邮件正文
+        function showEmailContent(afterRow, content) {
+            // 移除已存在的正文行
+            const existingContentRow = afterRow.nextElementSibling;
+            if (existingContentRow && existingContentRow.classList.contains('email-content-row')) {
+                existingContentRow.remove();
+            }
+            
+            const contentRow = document.createElement('tr');
+            contentRow.className = 'email-content-row';
+            const contentCell = document.createElement('td');
+            contentCell.colSpan = 5; // 现在有5列
+            contentCell.className = 'email-content';
+            
+            // 添加关闭按钮
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = '×';
+            closeBtn.className = 'btn btn-danger';
+            closeBtn.style.cssText = 'float: right; padding: 0.25rem 0.5rem; margin-bottom: 0.5rem;';
+            closeBtn.onclick = function() {
+                contentRow.remove();
+            };
+            
+            // 添加展开/收起按钮
+            const toggleBtn = document.createElement('button');
+            toggleBtn.textContent = '展开';
+            toggleBtn.className = 'btn btn-primary';
+            toggleBtn.style.cssText = 'margin-right: 0.5rem;';
+            toggleBtn.onclick = function() {
+                if (contentDiv.style.maxHeight === '200px' || contentDiv.style.maxHeight === '') {
+                    contentDiv.style.maxHeight = 'none';
+                    toggleBtn.textContent = '收起';
+                } else {
+                    contentDiv.style.maxHeight = '200px';
+                    toggleBtn.textContent = '展开';
+                }
+            };
+            
+            // 创建内容容器
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'email-content-text';
+            
+            // 检查内容是否为HTML格式
+            if (content && content.trim().startsWith('<')) {
+                // 如果是HTML内容，直接显示（但要确保安全性）
+                contentDiv.innerHTML = sanitizeHtml(content);
+            } else {
+                // 如果是纯文本，转换换行符为<br>标签
+                contentDiv.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
+            }
+            
+            // 初始化为收起状态
+            contentDiv.style.maxHeight = '200px';
+            
+            // 将按钮和内容添加到内容单元格
+            contentCell.appendChild(closeBtn);
+            contentCell.appendChild(toggleBtn);
+            contentCell.appendChild(contentDiv);
+            
+            contentRow.appendChild(contentCell);
+            
+            // 插入到指定行之后
+            afterRow.parentNode.insertBefore(contentRow, afterRow.nextSibling);
+        }
+        
+        // 查看邮件正文
+        function viewEmailBody(id) {
+            // 找到对应的邮件数据
+            const rows = document.querySelectorAll('#emailTable tbody tr');
+            let emailData = null;
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (row.dataset.id === String(id)) {
+                    // 从表格行中提取邮件数据
+                    const cells = row.cells;
+                    emailData = {
+                        id: id,
+                        subject: cells[1].textContent,
+                        sender: cells[2].textContent,
+                        send_date: cells[3].textContent
+                    };
+                    break;
+                }
+            }
+            
+            // 显示正在获取邮件正文的提示消息
+            showMessage('正在获取邮件正文...', 'loading');
+            
+            // 从API获取实时邮件正文
+            fetch(`${API_BASE}/emails/${id}/body/realtime`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                })
+                .then(data => {
+                    // 显示获取成功的消息
+                    showMessage('邮件正文获取成功', 'success');
+                    // 延迟清除消息，让用户看到成功提示
+                    setTimeout(() => {
+                        document.getElementById('message').className = '';
+                        document.getElementById('message').textContent = '';
+                    }, 1000);
+                    showEmailModal(data.body || '无邮件正文内容', false, emailData);
+                })
+                .catch(error => {
+                    console.error('获取邮件正文失败:', error);
+                    showMessage(`获取邮件正文失败: ${error.message}`, 'error');
+                    showEmailModal(`获取邮件正文失败: ${error.message}`, false, emailData);
+                });
+        }
+        
+        // 同步到投递汇总系统
+        function syncToDeliverySystem(emailData) {
+            // 从邮件主题和发件人中提取企业名称
+            const companyName = extractCompanyName(emailData.sender, emailData.subject);
+            
+            // 默认投递状态
+            let status = '已投递';
+            
+            // 创建投递记录数据
+            const deliveryData = {
+                company_name: companyName,
+                delivery_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+                status: status
+            };
+            
+            // 发送到投递汇总系统API
+            fetch(`${API_BASE}/deliveries`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(deliveryData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => { throw err; });
+                }
+            })
+            .then(result => {
+                showMessage(`已添加到投递汇总系统: ${companyName}`, 'success');
+            })
+            .catch(error => {
+                console.error('添加到投递汇总系统失败:', error);
+                // 检查是否是重复记录错误
+                if (error.error && error.error.includes('Duplicate')) {
+                    showMessage(`该记录已存在于投递汇总系统中: ${companyName}`, 'error');
+                } else {
+                    showMessage(`添加失败: ${error.error || '未知错误'}`, 'error');
+                }
+            });
+        }
+        
+        // 从发件人和主题中提取企业名称
+        function extractCompanyName(sender, subject) {
+            // 尝试从发件人中提取企业名称
+            if (sender) {
+                // 匹配常见的企业邮箱格式
+                const companyPatterns = [
+                    /@([^.]*)\.com/,  // @xxx.com
+                    /@([^.]*)\.cn/,   // @xxx.cn
+                    /([^\s@]+)@/,     // xxx@...
+                ];
+                
+                for (const pattern of companyPatterns) {
+                    const match = sender.match(pattern);
+                    if (match && match[1]) {
+                        // 清理公司名称
+                        let companyName = match[1];
+                        // 移除常见的前缀
+                        companyName = companyName.replace(/^(hr|job|jobs|career|careers|recruit|recruitment|zhaopin|zp)/i, '');
+                        if (companyName) {
+                            return companyName.charAt(0).toUpperCase() + companyName.slice(1);
+                        }
+                    }
+                }
+            }
+            
+            // 如果从发件人无法提取，尝试从主题中提取
+            if (subject) {
+                // 匹配主题中的公司名称
+                const subjectPatterns = [
+                    /面试邀请.*?(.{2,10})/,
+                    /笔试通知.*?(.{2,10})/,
+                    /([\u4e00-\u9fa5]{2,10})(?:公司)?(?:面试|笔试|招聘)/,
+                ];
+                
+                for (const pattern of subjectPatterns) {
+                    const match = subject.match(pattern);
+                    if (match && match[1]) {
+                        return match[1];
+                    }
+                }
+            }
+            
+            // 默认返回"未知公司"
+            return "未知公司";
+        }
+        
+        // 显示投递表单
+        function showDeliveryForm(emailData, emailModal) {
+            // 从邮件中提取建议数据
+            const suggestedCompanyName = extractCompanyName(emailData.sender, emailData.subject);
+            let suggestedStatus = '已投递';
+            
+            // 创建表单弹窗
+            const formModal = document.createElement('div');
+            formModal.className = 'modal';
+            
+            const formContent = document.createElement('div');
+            formContent.className = 'modal-content';
+            
+            // 创建标题栏（用于拖拽）
+            const titleBar = document.createElement('div');
+            titleBar.className = 'modal-title-bar';
+            titleBar.textContent = '添加到投递汇总';
+            
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '×';
+            closeBtn.onclick = function() {
+                document.body.removeChild(formModal);
+            };
+            
+            const formDiv = document.createElement('div');
+            formDiv.className = 'modal-body';
+            formDiv.innerHTML = `
+                <div class="form-group">
+                    <label for="companyName">企业名称 *</label>
+                    <input type="text" id="companyName" class="form-input" value="${suggestedCompanyName}" required>
+                </div>
+                <div class="form-group">
+                    <label for="deliveryDate">投递时间 *</label>
+                    <input type="datetime-local" id="deliveryDate" class="form-input" value="${new Date().toISOString().slice(0, 16)}" required>
+                </div>
+                <div class="form-group">
+                    <label for="status">投递状态 *</label>
+                    <select id="status" class="form-input" required>
+                        <option value="">请选择状态</option>
+                        <option value="已投递" ${suggestedStatus === '已投递' ? 'selected' : ''}>已投递</option>
+                        <option value="简历筛选中" ${suggestedStatus === '简历筛选中' ? 'selected' : ''}>简历筛选中</option>
+                        <option value="一面通过" ${suggestedStatus === '一面通过' ? 'selected' : ''}>一面通过</option>
+                        <option value="二面通过" ${suggestedStatus === '二面通过' ? 'selected' : ''}>二面通过</option>
+                        <option value="终面通过" ${suggestedStatus === '终面通过' ? 'selected' : ''}>终面通过</option>
+                        <option value="已拒绝" ${suggestedStatus === '已拒绝' ? 'selected' : ''}>已拒绝</option>
+                        <option value="待沟通" ${suggestedStatus === '待沟通' ? 'selected' : ''}>待沟通</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-success" id="saveDeliveryBtn">添加</button>
+                    <button type="button" class="btn btn-danger" id="cancelDeliveryBtn">取消</button>
+                </div>
+            `;
+            
+            titleBar.appendChild(closeBtn);
+            formContent.appendChild(titleBar);
+            formContent.appendChild(formDiv);
+            formModal.appendChild(formContent);
+            
+            document.body.appendChild(formModal);
+            
+            // 添加事件监听器
+            document.getElementById('saveDeliveryBtn').onclick = function() {
+                saveDeliveryRecord(emailData, formModal, emailModal);
+            };
+            
+            document.getElementById('cancelDeliveryBtn').onclick = function() {
+                document.body.removeChild(formModal);
+            };
+            
+            // 添加拖拽功能
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+            
+            titleBar.addEventListener('mousedown', dragStart);
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('mousemove', drag);
+            
+            function dragStart(e) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                
+                if (e.target === titleBar) {
+                    isDragging = true;
+                    formContent.style.cursor = 'grabbing';
+                }
+            }
+            
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                
+                isDragging = false;
+                formContent.style.cursor = 'default';
+            }
+            
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    
+                    setTranslate(currentX, currentY, formContent);
+                }
+            }
+            
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+            }
+            
+            // 点击遮罩关闭弹窗
+            formModal.onclick = function(event) {
+                if (event.target === formModal) {
+                    document.body.removeChild(formModal);
+                }
+            };
+        }
+        
+        // 保存投递记录
+        function saveDeliveryRecord(emailData, formModal, emailModal) {
+            const companyName = document.getElementById('companyName').value;
+            const deliveryDate = document.getElementById('deliveryDate').value;
+            const status = document.getElementById('status').value;
+            
+            // 验证必填字段
+            if (!companyName || !deliveryDate || !status) {
+                showMessage('请填写所有必填字段', 'error');
+                return;
+            }
+            
+            // 显示正在添加的消息
+            showMessage(`正在添加到投递汇总系统: ${companyName}...`, 'loading');
+            
+            // 创建投递记录数据
+            const deliveryData = {
+                company_name: companyName,
+                delivery_date: deliveryDate,
+                status: status
+            };
+            
+            // 发送到投递汇总系统API
+            fetch(`${API_BASE}/deliveries`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(deliveryData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.json().then(err => { throw err; });
+                }
+            })
+            .then(result => {
+                showMessage(`添加成功: ${companyName} 已添加到投递汇总系统`, 'success');
+                // 关闭表单弹窗
+                document.body.removeChild(formModal);
+                // 关闭邮件正文弹窗
+                document.body.removeChild(emailModal);
+            })
+            .catch(error => {
+                console.error('添加到投递汇总系统失败:', error);
+                // 检查是否是重复记录错误
+                if (error.error && error.error.includes('Duplicate')) {
+                    showMessage(`添加失败: 该记录已存在于投递汇总系统中: ${companyName}`, 'error');
+                } else {
+                    showMessage(`添加失败: ${error.error || '未知错误'}`, 'error');
+                }
+            });
+        }
+        
+        // 显示邮件弹窗
+        function showEmailModal(content, isLoading = false, emailData = null) {
+            // 创建弹窗遮罩
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            
+            // 创建弹窗内容
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            
+            // 创建标题栏（用于拖拽）
+            const titleBar = document.createElement('div');
+            titleBar.className = 'modal-title-bar';
+            titleBar.textContent = '邮件正文';
+            
+            // 创建关闭按钮
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '×';
+            closeBtn.onclick = function() {
+                document.body.removeChild(modal);
+            };
+            
+            // 创建邮件内容容器
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'modal-body';
+            
+            if (isLoading) {
+                contentDiv.innerHTML = `<div class="loading">${content}</div>`;
+            } else {
+                // 检查内容是否为HTML格式
+                if (content && content.trim().startsWith('<')) {
+                    // 如果是HTML内容，直接显示（但要确保安全性）
+                    contentDiv.innerHTML = sanitizeHtml(content);
+                } else {
+                    // 如果是纯文本，转换换行符为<br>标签
+                    contentDiv.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
+                }
+                
+                // 如果有邮件数据，添加操作按钮
+                if (emailData) {
+                    const actionDiv = document.createElement('div');
+                    actionDiv.className = 'modal-actions';
+                    
+                    // 添加与投递汇总系统联动的按钮
+                    const syncBtn = document.createElement('button');
+                    syncBtn.className = 'btn btn-warning';
+                    syncBtn.textContent = '添加到投递汇总';
+                    syncBtn.onclick = function() {
+                        showDeliveryForm(emailData, modal);
+                    };
+                    
+                    actionDiv.appendChild(syncBtn);
+                    contentDiv.appendChild(actionDiv);
+                }
+            }
+            
+            // 组装弹窗
+            titleBar.appendChild(closeBtn);
+            modalContent.appendChild(titleBar);
+            modalContent.appendChild(contentDiv);
+            modal.appendChild(modalContent);
+            
+            // 添加到页面
+            document.body.appendChild(modal);
+            
+            // 添加拖拽功能
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+            
+            titleBar.addEventListener('mousedown', dragStart);
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('mousemove', drag);
+            
+            function dragStart(e) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+                
+                if (e.target === titleBar) {
+                    isDragging = true;
+                    modalContent.style.cursor = 'grabbing';
+                }
+            }
+            
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                
+                isDragging = false;
+                modalContent.style.cursor = 'default';
+            }
+            
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    
+                    setTranslate(currentX, currentY, modalContent);
+                }
+            }
+            
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+            }
+            
+            // 点击遮罩关闭弹窗
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            };
+            
+            // 返回弹窗元素，以便后续操作
+            return modal;
+        }
+        
+        // 全选/取消全选
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.select-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+        
+        // 全选
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.select-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            
+            // 检查是否已经全选
+            const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+            
+            // 如果已经全选，则取消全选；否则全选
+            const newCheckedState = !allChecked;
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = newCheckedState;
+            });
+            selectAllCheckbox.checked = newCheckedState;
+        }
+        
+        // 批量删除邮件
+        function bulkDeleteEmails() {
+            const selectedCheckboxes = document.querySelectorAll('.select-checkbox:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                showMessage('请先选择要删除的邮件', 'error');
+                return;
+            }
+            
+            if (confirm(`确定要删除选中的 ${selectedCheckboxes.length} 封邮件吗？`)) {
+                // 显示正在删除的消息
+                showMessage(`正在删除 ${selectedCheckboxes.length} 封邮件...`, 'loading');
+                
+                let deletePromises = [];
+                
+                selectedCheckboxes.forEach(checkbox => {
+                    const id = checkbox.dataset.id;
+                    
+                    // 创建删除请求的Promise
+                    const deletePromise = fetch(`${API_BASE}/emails/${id}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                    });
+                    
+                    deletePromises.push(deletePromise);
+                });
+                
+                // 等待所有删除请求完成
+                Promise.all(deletePromises)
+                    .then(results => {
+                        showMessage(`成功删除 ${results.length} 封邮件！`, 'success');
+                        // 重新加载数据
+                        loadData();
+                    })
+                    .catch(error => {
+                        console.error('批量删除邮件失败:', error);
+                        showMessage(`批量删除邮件失败: ${error.message}`, 'error');
+                    });
+            }
+        }
+        
+        // 删除邮件
+        function deleteEmail(id) {
+            if (confirm('确定要删除这封邮件吗？')) {
+                // 显示正在删除的消息
+                showMessage('正在删除邮件...', 'loading');
+                
+                fetch(`${API_BASE}/emails/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                })
+                .then(result => {
+                    showMessage('邮件删除成功！', 'success');
+                    // 重新加载数据
+                    loadData();
+                })
+                .catch(error => {
+                    console.error('删除邮件失败:', error);
+                    showMessage(`删除邮件失败: ${error.message}`, 'error');
+                });
+            }
+        }
+        
+        // 由于我们不再使用分类功能，此函数已不再需要
+        
+        // 邮件排序功能
+        function sortEmails() {
+            // 重新加载并排序数据
+            loadData();
+        }
+        
+        // 格式化时间显示
+        function formatEmailDate(dateString) {
+            if (!dateString) return '未知时间';
+            
+            try {
+                // 解析原始日期字符串
+                const date = new Date(dateString);
+                
+                // 检查日期是否有效
+                if (isNaN(date.getTime())) {
+                    return dateString; // 如果无法解析，返回原始字符串
+                }
+                
+                // 格式化为更易读的格式: YYYY-MM-DD HH:mm
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${year}-${month}-${day} ${hours}:${minutes}`;
+            } catch (error) {
+                console.error('日期格式化错误:', error);
+                return dateString; // 如果出错，返回原始字符串
+            }
+        }
+        
+        // HTML转义函数，防止XSS攻击同时正确显示内容
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return unsafe;
+            return unsafe
+                .replace(/&/g, "&")
+                .replace(/</g, "<")
+                .replace(/>/g, ">")
+                .replace(/"/g, '"')
+                .replace(/'/g, "'");
+        }
+        
+        // 简单的HTML净化函数，只允许安全的HTML标签
+        function sanitizeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return escapeHtml(unsafe);
+            
+            // 移除潜在危险的标签和属性
+            return unsafe
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+                .replace(/on\w+="[^"]*"/gi, '')
+                .replace(/on\w+='[^']*'/gi, '')
+                .replace(/on\w+=[^>\s]*/gi, '')
+                .replace(/javascript:/gi, '')
+                .replace(/vbscript:/gi, '');
+        }
+    </script>
+</body>
+</html>

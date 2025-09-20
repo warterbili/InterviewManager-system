@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业投递汇总</title>
+    <link rel="stylesheet" href="./common.css">
+    <style>
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-col {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], input[type="datetime-local"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            box-sizing: border-box;
+            min-height: calc(2.25rem + 2px);
+        }
+
+        input[type="text"]:focus, input[type="datetime-local"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            #saveBtn, #resetBtn {
+                width: 100% !important;
+                min-height: calc(2.25rem + 2px) !important;
+                padding: 0.5rem 1rem !important;
+            }
+            
+            /* 小屏幕上的新布局 */
+            div[style*="flex-wrap: wrap"] {
+                flex-direction: column;
+                gap: 0.5rem !important;
+                margin-bottom: 0.5rem !important;
+                padding: 0.5rem !important;
+            }
+            
+            div[style*="display: flex; align-items: end"] {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            div[style*="margin-left: 0.75rem"] {
+                margin-left: 0 !important;
+                margin-top: 0.75rem;
+            }
+        }
+        
+        /* Accessibility improvements for status messages */
+        #message[role="status"] {
+            border: 1px solid transparent;
+            border-radius: var(--border-radius);
+            padding: 0.75rem;
+            margin: 0.75rem 0;
+        }
+        
+        #message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        
+        #message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        
+        #message.loading {
+            background-color: #cce5ff;
+            color: #004085;
+            border-color: #b8daff;
+        }
+        
+        /* Skip link for accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--primary-color);
+            color: white;
+            padding: 8px;
+            z-index: 1000;
+            border-radius: var(--border-radius);
+        }
+        
+        .skip-link:focus {
+            top: 6px;
+        }
+        
+        /* Screen reader only class */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: var(--gray-100);
+            border-radius: var(--border-radius);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    <div class="page-header">
+        <div class="container">
+            <h1>企业投递汇总</h1>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/" class="back-btn">
+                ← 返回主页
+            </a>
+        </div>
+        
+        <main id="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 id="form-title">企业投递汇总</h2>
+                </div>
+                
+                <form id="deliveryForm" aria-labelledby="form-title">
+                    <input type="hidden" id="recordId">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="companyName">企业名称 *</label>
+                                <input type="text" id="companyName" required aria-describedby="companyNameHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; transition: var(--transition); box-sizing: border-box; width: 100%;">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="deliveryDate">投递时间 *</label>
+                                <input type="datetime-local" id="deliveryDate" required aria-describedby="deliveryDateHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; transition: var(--transition); box-sizing: border-box; width: 100%;">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="status">投递状态 *</label>
+                                <select id="status" required aria-describedby="statusHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
+                                    <option value="">请选择状态</option>
+                                    <option value="已投递">已投递</option>
+                                    <option value="简历筛选中">简历筛选中</option>
+                                    <option value="一面通过">一面通过</option>
+                                    <option value="二面通过">二面通过</option>
+                                    <option value="终面通过">终面通过</option>
+                                    <option value="已拒绝">已拒绝</option>
+                                    <option value="待沟通">待沟通</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="sortOrder">排序方式:</label>
+                            <select id="sortOrder" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
+                                <option value="asc">时间升序（最早优先）</option>
+                                <option value="desc">时间降序（最新优先）</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label> </label>
+                            <div class="action-buttons" style="margin: 0;">
+                                <button type="button" class="btn btn-success" id="saveBtn" style="min-height: calc(2.25rem + 2px);">
+                                    保存记录
+                                </button>
+                                <button type="button" class="btn btn-primary" id="resetBtn" style="min-height: calc(2.25rem + 2px);">
+                                    重置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                <div id="message" role="status" aria-live="polite"></div>
+                
+                <div class="table-container">
+                    <table id="deliveryTable" aria-label="投递记录列表">
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">企业名称</th>
+                                <th scope="col">投递时间</th>
+                                <th scope="col">投递状态</th>
+                                <th scope="col">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 数据将从后端API加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 检查配置，如果没有则重定向到配置页面
+        if (!localStorage.getItem('db_host') && !localStorage.getItem('db_user') && !localStorage.getItem('db_password') &&
+            !localStorage.getItem('email_address') && !localStorage.getItem('email_password') && !localStorage.getItem('imap_server')) {
+            window.location.href = '/config';
+        }
+
+        // API基础URL
+        const API_BASE = '/api';
+        
+        // 格式化日期显示
+        function formatDeliveryDate(dateString) {
+            return dateString ? new Date(dateString).toLocaleString('zh-CN') : '';
+        }
+        
+        // 显示消息函数
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = type;
+            
+            // 3秒后自动清除消息
+            setTimeout(() => {
+                messageEl.textContent = '';
+                messageEl.className = '';
+            }, 3000);
+        }
+
+        // 页面加载时从后端API获取数据
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            
+            // 添加事件监听器
+            document.getElementById('saveBtn').addEventListener('click', saveRecord);
+            document.getElementById('resetBtn').addEventListener('click', resetForm);
+            
+            // 为排序选择器添加事件监听器
+            document.getElementById('sortOrder').addEventListener('change', function() {
+                const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
+                const rows = Array.from(table.rows);
+                
+                // 按时间排序
+                sortTableRows(rows);
+            });
+        });
+
+        // 按时间排序表格行
+        function sortTableRows(rows) {
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            rows.sort((a, b) => {
+                // 获取每行的时间文本内容
+                const dateTextA = a.cells[2].textContent;
+                const dateTextB = b.cells[2].textContent;
+                
+                // 将日期字符串转换为Date对象进行比较
+                const dateA = dateTextA ? new Date(dateTextA) : new Date(0);
+                const dateB = dateTextB ? new Date(dateTextB) : new Date(0);
+                
+                if (sortOrder === 'asc') {
+                    return dateA - dateB;
+                } else {
+                    return dateB - dateA;
+                }
+            });
+            
+            // 重新排列行
+            const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
+            rows.forEach(row => table.appendChild(row));
+        }
+
+        // 从后端API加载数据
+        function loadData() {
+            const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
+            
+            // 显示加载状态
+            table.innerHTML = '<tr><td colspan="5" style="text-align: center;">正在加载数据...</td></tr>';
+            showMessage('正在加载投递记录...', 'loading');
+            
+            fetch(`${API_BASE}/deliveries`)
+                .then(response => response.json())
+                .then(data => {
+                    // 清空现有数据
+                    table.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        table.innerHTML = '<tr><td colspan="5" style="text-align: center;">暂无投递记录</td></tr>';
+                        showMessage('加载完成，暂无投递记录', 'success');
+                        return;
+                    }
+                    
+                    data.forEach(item => {
+                        addRowToTable(item);
+                    });
+                    
+                    // 获取排序顺序
+                    const sortOrder = document.getElementById('sortOrder').value;
+                    
+                    // 获取所有数据行
+                    const rows = Array.from(table.rows);
+                    
+                    // 按时间排序
+                    sortTableRows(rows);
+                    
+                    showMessage(`加载完成，共找到 ${data.length} 条投递记录`, 'success');
+                })
+                .catch(error => {
+                    console.error('加载数据失败:', error);
+                    table.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">加载数据失败: ' + error.message + '</td></tr>';
+                    showMessage('加载数据失败: ' + error.message, 'error');
+                });
+        }
+
+        // 添加行到表格（使用DOM方法而不是innerHTML以提高安全性）
+        function addRowToTable(item) {
+            const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            
+            // 格式化日期显示
+            const formattedDate = formatDeliveryDate(item.delivery_date);
+            
+            // 创建单元格
+            const idCell = newRow.insertCell(0);
+            const companyCell = newRow.insertCell(1);
+            const dateCell = newRow.insertCell(2);
+            const statusCell = newRow.insertCell(3);
+            const actionCell = newRow.insertCell(4);
+            
+            // 填充单元格内容
+            idCell.textContent = item.id;
+            companyCell.textContent = item.company_name;
+            dateCell.textContent = formattedDate;
+            statusCell.textContent = item.status;
+            
+            // 创建操作按钮
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'btn btn-warning';
+            editBtn.textContent = '编辑';
+            editBtn.addEventListener('click', () => editRecord(item.id, item.company_name, item.delivery_date, item.status));
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-danger';
+            deleteBtn.textContent = '删除';
+            deleteBtn.addEventListener('click', () => deleteRecord(item.id));
+            
+            // 添加按钮到操作单元格
+            actionCell.appendChild(editBtn);
+            actionCell.appendChild(deleteBtn);
+            actionCell.className = 'action-buttons';
+        }
+        
+        // 编辑记录
+        function editRecord(id, companyName, deliveryDate, status) {
+            // 设置表单标题
+            document.getElementById('form-title').textContent = '编辑投递记录';
+            
+            // 填充表单数据
+            document.getElementById('recordId').value = id;
+            document.getElementById('companyName').value = companyName;
+            document.getElementById('deliveryDate').value = deliveryDate ? deliveryDate.slice(0, 16) : '';
+            document.getElementById('status').value = status;
+            
+            // 显示消息
+            showMessage(`正在编辑记录: ${companyName}`, 'success');
+            
+            // 滚动到表单顶部
+            document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 重置表单
+        function resetForm() {
+            // 重置表单标题
+            document.getElementById('form-title').textContent = '添加/编辑投递记录';
+            
+            // 清空表单数据
+            document.getElementById('recordId').value = '';
+            document.getElementById('deliveryForm').reset();
+            
+            // 显示消息
+            showMessage('表单已重置', 'success');
+        }
+        
+        // 保存记录（添加或更新）
+        function saveRecord() {
+            const id = document.getElementById('recordId').value;
+            const companyName = document.getElementById('companyName').value;
+            const deliveryDate = document.getElementById('deliveryDate').value;
+            const status = document.getElementById('status').value;
+            
+            // 验证必填字段
+            if (!companyName || !deliveryDate || !status) {
+                showMessage('请填写所有必填字段', 'error');
+                return;
+            }
+            
+            const recordData = {
+                company_name: companyName,
+                delivery_date: deliveryDate,
+                status: status
+            };
+            
+            let url = `${API_BASE}/deliveries`;
+            let method = 'POST';
+            
+            // 如果有ID，则为更新操作
+            if (id) {
+                url += `/${id}`;
+                method = 'PUT';
+                showMessage(`正在更新记录: ${companyName}...`, 'loading');
+            } else {
+                showMessage(`正在添加记录: ${companyName}...`, 'loading');
+            }
+            
+            // 发送到后端API
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(recordData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(result => {
+                showMessage(id ? `记录更新成功: ${companyName}` : `记录添加成功: ${companyName}`, 'success');
+                resetForm();
+                loadData(); // 重新加载数据
+            })
+            .catch(error => {
+                console.error('保存记录失败:', error);
+                const errorMsg = error.error || '保存记录失败';
+                showMessage(`${id ? '更新' : '添加'}记录失败: ${errorMsg}`, 'error');
+            });
+        }
+        
+        // 删除记录
+        function deleteRecord(id) {
+            if (!confirm('确定要删除这条记录吗？')) {
+                return;
+            }
+            
+            // 显示正在删除的消息
+            showMessage('正在删除记录...', 'loading');
+            
+            // 发送到后端API
+            fetch(`${API_BASE}/deliveries/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(result => {
+                showMessage('记录删除成功！', 'success');
+                loadData(); // 重新加载数据
+            })
+            .catch(error => {
+                console.error('删除记录失败:', error);
+                const errorMsg = error.error || '删除记录失败';
+                showMessage(`删除记录失败: ${errorMsg}`, 'error');
+            });
+        }
+    </script>
+</body>
+</html>
