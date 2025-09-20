@@ -86,6 +86,12 @@
                 });
         }
         
+        // 设置最大等待时间，避免无限等待
+        setTimeout(() => {
+            // 即使可能未完全准备好，也尝试跳转到主页
+            window.location.href = 'http://localhost:3001';
+        }, 5000); // 5秒后强制跳转
+        
         // 开始检查服务器状态
         checkServerReady();
     </script>

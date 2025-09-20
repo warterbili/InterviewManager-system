@@ -3,7 +3,22 @@ import mysql from 'mysql2/promise';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
+import fs from 'fs';
 import { config, loadConfig, saveConfig } from './config.js';
+
+// 日志记录函数
+const logFilePath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'log.txt');
+
+function logMessage(message, level = 'INFO') {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] [${level}] ${message}\n`;
+    
+    // 写入日志文件，确保使用UTF-8编码
+    fs.appendFileSync(logFilePath, logEntry, { encoding: 'utf8' });
+    
+    // 在开发时也可以输出到控制台
+    console.log(logEntry.trim());
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,11 +78,15 @@ const getDbConfigs = () => ({
 // 初始化数据库连接
 async function initDatabase() {
     try {
-    // 检查是否提供了数据库配置
+        logMessage('正在初始化数据库连接...');
+        
+        // 检查是否提供了数据库配置
         if (!config.db.host || !config.db.user || !config.db.password) {
+            logMessage('数据库配置不完整，跳过数据库初始化', 'WARN');
             return;
         }
     
+        logMessage('正在连接数据库...');
         // 创建数据库（如果不存在）
         const rootConnection = await mysql.createConnection({
             host: config.db.host,
@@ -77,8 +96,14 @@ async function initDatabase() {
     
         // 创建所有需要的数据库
         await rootConnection.query('CREATE DATABASE IF NOT EXISTS interview_schedule');
+        logMessage('创建/检查 interview_schedule 数据库');
+        
         await rootConnection.query('CREATE DATABASE IF NOT EXISTS job_emails');
+        logMessage('创建/检查 job_emails 数据库');
+        
         await rootConnection.query('CREATE DATABASE IF NOT EXISTS job_deliveries');
+        logMessage('创建/检查 job_deliveries 数据库');
+        
         await rootConnection.end();
     
         // 创建数据库连接池
@@ -86,6 +111,7 @@ async function initDatabase() {
         interviewDb = mysql.createPool(dbConfigs.interview);
         emailDb = mysql.createPool(dbConfigs.email);
         deliveryDb = mysql.createPool(dbConfigs.delivery);
+        logMessage('数据库连接池创建成功');
     
         // 创建表（如果不存在）
         await interviewDb.query(`
@@ -99,6 +125,7 @@ async function initDatabase() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+        logMessage('创建/检查 interviews 表');
     
         await emailDb.query(`
       CREATE TABLE IF NOT EXISTS all_emails (
@@ -112,6 +139,7 @@ async function initDatabase() {
         UNIQUE KEY unique_email (imap_id, subject(50), sender(50), send_date(50))
       )
     `);
+        logMessage('创建/检查 all_emails 表');
     
         await deliveryDb.query(`
       CREATE TABLE IF NOT EXISTS deliveries (
@@ -122,6 +150,7 @@ async function initDatabase() {
         UNIQUE KEY unique_delivery (company_name, delivery_date, status)
       )
     `);
+        logMessage('创建/检查 deliveries 表');
     
         // 插入默认数据（如果表为空）
         const [interviewRows] = await interviewDb.query('SELECT COUNT(*) as count FROM interviews');
@@ -133,29 +162,36 @@ async function initDatabase() {
                 ['京东', '销售', new Date('2025-09-28T15:00'), false, false]
             ];
             await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion) VALUES ?', [defaultData]);
+            logMessage('插入默认面试数据');
         }
     
-        // console.log('数据库初始化成功');
+        logMessage('数据库初始化成功');
     } catch (err) {
-        // console.error('数据库初始化失败:', err);
+        logMessage(`数据库初始化失败: ${err.message}`, 'ERROR');
     }
 }
 
 // API路由
 // 获取当前配置
 app.get('/api/config', async (req, res) => {
+    logMessage('收到获取配置请求');
     await loadConfig();
     res.json(config);
+    logMessage('配置信息已返回');
 });
 
 // 更新配置
 app.post('/api/config', async (req, res) => {
     try {
+        logMessage('收到更新配置请求');
         await saveConfig(req.body);
+        logMessage('配置保存成功，正在重新初始化数据库连接');
         // 重新初始化数据库连接
         await initDatabase();
         res.json({ message: '配置更新成功', config });
+        logMessage('配置更新完成并返回响应');
     } catch (err) {
+        logMessage(`配置更新失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '配置更新失败: ' + err.message });
     }
 });
@@ -163,7 +199,9 @@ app.post('/api/config', async (req, res) => {
 // 面试相关API
 app.get('/api/interviews', async (req, res) => {
     try {
+        logMessage('收到获取面试数据请求');
         if (!interviewDb) {
+            logMessage('数据库未初始化', 'WARN');
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
@@ -176,8 +214,9 @@ app.get('/api/interviews', async (req, res) => {
             completion: row.completion
         }));
         res.json(data);
+        logMessage(`成功返回 ${data.length} 条面试数据`);
     } catch (err) {
-        // console.error('获取面试数据失败:', err);
+        logMessage(`获取面试数据失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '获取面试数据失败' });
     }
 });
@@ -274,24 +313,29 @@ app.delete('/api/emails/:id', async (req, res) => {
 
 app.get('/api/emails/:id/body/realtime', async (req, res) => {
     try {
+        logMessage(`收到获取邮件正文请求，邮件ID: ${req.params.id}`);
         const { id } = req.params;
         if (!/^[0-9]+$/.test(id)) {
+            logMessage(`无效的邮件ID: ${id}`, 'WARN');
             return res.status(400).json({ error: '无效的邮件ID' });
         }
     
         const [rows] = await emailDb.query('SELECT imap_id FROM all_emails WHERE id = ?', [id]);
         if (rows.length === 0) {
+            logMessage(`邮件未找到，ID: ${id}`, 'WARN');
             return res.status(404).json({ error: '邮件未找到' });
         }
     
         const imapId = rows[0].imap_id;
         if (!imapId) {
+            logMessage(`该邮件没有IMAP ID，ID: ${id}`, 'WARN');
             return res.status(404).json({ error: '该邮件没有IMAP ID' });
         }
     
         // 使用spawn执行Python脚本获取实时邮件正文
         const pythonPath = 'python';
         const scriptPath = path.join(__dirname, '..', 'script', 'get_email_body_by_id.py');
+        logMessage(`正在执行邮件正文获取脚本，IMAP ID: ${imapId}`);
     
         const pythonProcess = spawn(pythonPath, [scriptPath, imapId, config.email.address, config.email.password, config.email.imap_server], {
             cwd: __dirname,
@@ -303,29 +347,30 @@ app.get('/api/emails/:id/body/realtime', async (req, res) => {
     
         pythonProcess.stdout.on('data', (data) => {
           stdoutData += data.toString();
-          // console.log(`获取邮件正文脚本输出: ${data.toString().trim()}`);
+          logMessage(`邮件正文脚本输出: ${data.toString().trim().substring(0, 100)}...`);
         });
     
         pythonProcess.stderr.on('data', (data) => {
           stderrData += data.toString();
-          // console.log(`获取邮件正文脚本日志: ${data.toString().trim()}`);
+          logMessage(`邮件正文脚本日志: ${data.toString().trim()}`, 'DEBUG');
         });
     
         pythonProcess.on('close', (code) => {
             if (code === 0) {
+                logMessage(`邮件正文获取成功，ID: ${id}`);
                 res.json({ body: stdoutData });
             } else {
-                // console.error(`获取邮件正文脚本执行失败，退出码: ${code}`, stderrData);
+                logMessage(`邮件正文脚本执行失败，退出码: ${code}, 错误: ${stderrData}`, 'ERROR');
                 res.status(500).json({ error: '获取邮件正文失败', details: stderrData });
             }
         });
     
         pythonProcess.on('error', (error) => {
-            // console.error('执行获取邮件正文脚本时出错:', error);
+            logMessage(`执行邮件正文脚本时出错: ${error.message}`, 'ERROR');
             res.status(500).json({ error: '无法启动获取邮件正文脚本', details: error.message });
         });
     } catch (err) {
-        // console.error('获取邮件正文失败:', err);
+        logMessage(`获取邮件正文失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '获取邮件正文失败' });
     }
 });
@@ -333,6 +378,7 @@ app.get('/api/emails/:id/body/realtime', async (req, res) => {
 // 获取邮件
 app.post('/api/fetch-emails', async (req, res) => {
     try {
+        logMessage('收到获取邮件请求');
         const { startDate, endDate } = req.body || {};
     
         // 从请求头获取邮箱配置
@@ -346,6 +392,7 @@ app.post('/api/fetch-emails', async (req, res) => {
         // 构建Python脚本参数
         const pythonPath = 'python';
         const scriptPath = path.join(__dirname, '..', 'script', 'qq_email_imap.py');
+        logMessage(`正在执行邮件获取脚本: ${scriptPath}`);
     
         // 基本参数
         let args = [scriptPath, email, password, imap_server];
@@ -353,9 +400,8 @@ app.post('/api/fetch-emails', async (req, res) => {
         // 如果提供了日期范围，则添加日期参数
         if (startDate && endDate) {
             args.push(startDate, endDate);
+            logMessage(`获取指定日期范围的邮件: ${startDate} 到 ${endDate}`);
         }
-    
-        // console.log(`正在执行邮件获取脚本: ${scriptPath}`, args);
     
         const pythonProcess = spawn(pythonPath, args, {
             cwd: __dirname
@@ -367,12 +413,12 @@ app.post('/api/fetch-emails', async (req, res) => {
         // 设置子进程超时
         const timeout = setTimeout(() => {
             pythonProcess.kill('SIGTERM');
-            // console.log('邮件获取脚本执行超时，已发送终止信号');
+            logMessage('邮件获取脚本执行超时，已发送终止信号', 'WARN');
       
             // 如果SIGTERM不起作用，1秒后发送SIGKILL
             const forceKillTimeout = setTimeout(() => {
                 pythonProcess.kill('SIGKILL');
-                // console.log('邮件获取脚本强制终止');
+                logMessage('邮件获取脚本强制终止', 'WARN');
             }, 1000);
       
             pythonProcess.on('exit', () => {
@@ -384,19 +430,19 @@ app.post('/api/fetch-emails', async (req, res) => {
             stdoutData += data.toString();
             // 实时记录进度信息
             const dataStr = data.toString();
-            // console.log(`邮件获取脚本输出: ${dataStr.trim()}`);
+            logMessage(`邮件获取脚本输出: ${dataStr.trim().substring(0, 100)}...`);
         });
     
         pythonProcess.stderr.on('data', (data) => {
             stderrData += data.toString();
-            // console.log(`邮件获取脚本日志: ${data.toString().trim()}`);
+            logMessage(`邮件获取脚本日志: ${data.toString().trim()}`, 'DEBUG');
         });
     
         pythonProcess.on('close', (code, signal) => {
             clearTimeout(timeout); // 清除超时定时器
       
             if (signal === 'SIGTERM' || signal === 'SIGKILL') {
-                // console.log('邮件获取脚本被终止');
+                logMessage('邮件获取脚本被终止', 'WARN');
                 res.status(408).json({ 
                     success: false, 
                     message: '邮件获取超时，已终止操作', 
@@ -407,11 +453,10 @@ app.post('/api/fetch-emails', async (req, res) => {
       
             if (code === 0) {
                 let insertedCount = 0;
-                // console.log('stdoutData:', stdoutData); // 调试日志
+                logMessage('邮件获取脚本执行完成');
                 
                 // 尝试匹配"成功插入 X 封邮件"格式（中文）
                 const insertedMatch = stdoutData.match(/成功插入\s+(\d+)\s+封邮件/);
-                // console.log('insertedMatch:', insertedMatch); // 调试日志
                 if (insertedMatch) {
                     insertedCount = parseInt(insertedMatch[1]);
                 }
@@ -419,7 +464,6 @@ app.post('/api/fetch-emails', async (req, res) => {
                 // 尝试匹配"没有获取到任何邮件"格式（中文）
                 if (insertedCount === 0) {
                     const noEmailsMatch = stdoutData.match(/没有获取到任何邮件/);
-                    // console.log('noEmailsMatch:', noEmailsMatch); // 调试日志
                     if (noEmailsMatch) {
                         insertedCount = 0;
                     }
@@ -428,7 +472,6 @@ app.post('/api/fetch-emails', async (req, res) => {
                 // 尝试匹配数字格式（从任何包含数字的行中提取）
                 if (insertedCount === 0) {
                     const numberMatch = stdoutData.match(/(\d+)/);
-                    // console.log('numberMatch:', numberMatch); // 调试日志
                     if (numberMatch) {
                         insertedCount = parseInt(numberMatch[1]);
                     }
@@ -436,17 +479,11 @@ app.post('/api/fetch-emails', async (req, res) => {
                 
                 // 尝试匹配脚本执行完成的返回值
                 const scriptCompleteMatch = stdoutData.match(/脚本执行完成，返回值:\s+(\d+)/);
-                // console.log('scriptCompleteMatch:', scriptCompleteMatch); // 调试日志
                 if (scriptCompleteMatch) {
                     insertedCount = parseInt(scriptCompleteMatch[1]);
                 }
                 
-                // console.log('最终insertedCount:', insertedCount); // 调试日志
-                // console.log('返回的JSON:', { 
-                //     success: true, 
-                //     message: `邮件获取完成，新增 ${insertedCount} 封邮件`, 
-                //     insertedCount: insertedCount
-                // }); // 调试日志
+                logMessage(`邮件获取完成，新增 ${insertedCount} 封邮件`);
         
                 res.json({ 
                     success: true, 
@@ -454,6 +491,7 @@ app.post('/api/fetch-emails', async (req, res) => {
                     insertedCount: insertedCount
                 });
             } else {
+                logMessage(`邮件获取失败或被中断，错误: ${stderrData}`, 'ERROR');
                 res.status(500).json({ 
                     success: false, 
                     message: '邮件获取失败或被中断', 
@@ -464,7 +502,7 @@ app.post('/api/fetch-emails', async (req, res) => {
     
         pythonProcess.on('error', (error) => {
             clearTimeout(timeout); // 清除超时定时器
-            // console.error('执行邮件获取脚本时出错:', error);
+            logMessage(`执行邮件获取脚本时出错: ${error.message}`, 'ERROR');
             res.status(500).json({ 
                 success: false, 
                 message: '无法启动邮件获取脚本', 
@@ -472,7 +510,7 @@ app.post('/api/fetch-emails', async (req, res) => {
             });
         });
     } catch (err) {
-        // console.error('获取邮件失败:', err);
+        logMessage(`获取邮件失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '获取邮件失败' });
     }
 });
@@ -604,7 +642,9 @@ app.get('/config', (req, res) => {
 
 // 退出系统接口
 app.post('/api/exit', (req, res) => {
+    logMessage('收到退出系统请求');
     res.json({ message: '服务器正在关闭...' });
+    logMessage('服务器即将关闭');
     // 延迟关闭服务器，确保响应能发送回去
     setTimeout(() => {
         process.exit(0);
@@ -612,12 +652,15 @@ app.post('/api/exit', (req, res) => {
 });
 
 // 初始化数据库并启动服务器
+logMessage('正在启动面试管理系统...');
 loadConfig().then(() => {
+    logMessage('配置文件加载完成');
     return initDatabase();
 }).then(() => {
+    logMessage('数据库初始化完成');
     app.listen(PORT, () => {
-        // console.log(`服务器运行在 http://localhost:${PORT}`);
+        logMessage(`服务器运行在 http://localhost:${PORT}`);
     });
 }).catch(err => {
-    // console.error('启动服务器失败:', err);
+    logMessage(`启动服务器失败: ${err.message}`, 'ERROR');
 });
