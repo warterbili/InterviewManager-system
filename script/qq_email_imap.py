@@ -1,381 +1,285 @@
-import imaplib
 import email
 import pymysql
 from email.header import decode_header
 import datetime
-import hashlib
 import sys
 import os
-from dotenv import load_dotenv
+from imapclient import IMAPClient
+import ssl
+import logging
 
-# 加载环境变量
-load_dotenv()
+# 导入配置模块
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import config
+
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8')
+logger = logging.getLogger(__name__)
 
 def connect_to_qq_mail(email, password, imap_server):
     """连接到邮箱并登录"""
-    # 创建一个安全的SSL连接
-    mail = imaplib.IMAP4_SSL(imap_server)
-    
-    # 使用邮箱地址和授权码登录
-    mail.login(email, password)
-    
-    print(f"已成功连接并登录到邮箱: {email}")
-    return mail
+    try:
+        # 创建一个安全的SSL连接
+        client = IMAPClient(imap_server, ssl=True, ssl_context=ssl.create_default_context())
+        
+        # 使用邮箱地址和授权码登录
+        client.login(email, password)
+        
+        logger.info(f"Successfully connected and logged in to email: {email}")
+        return client
+    except Exception as e:
+        logger.error(f"Failed to connect to email: {e}")
+        raise
 
 def get_email_body(msg):
     """获取邮件正文内容"""
-    body = ""
+    def decode_content(payload, charset=None):
+        if not payload:
+            return ""
+        if charset:
+            try:
+                return payload.decode(charset, errors='ignore')
+            except:
+                pass
+        for encoding in ['utf-8', 'gbk', 'gb2312', 'latin1']:
+            try:
+                return payload.decode(encoding)
+            except UnicodeDecodeError:
+                continue
+        return payload.decode('utf-8', errors='ignore')
     
+    body = ""
     if msg.is_multipart():
         for part in msg.walk():
-            content_type = part.get_content_type()
-            content_disposition = str(part.get("Content-Disposition"))
-            
-            # 跳过附件
-            if "attachment" in content_disposition:
+            if "attachment" in str(part.get("Content-Disposition", "")):
                 continue
-            
-            # 获取文本内容
-            if content_type == "text/plain" or content_type == "text/html":
+            content_type = part.get_content_type()
+            if content_type in ["text/plain", "text/html"]:
                 try:
-                    charset = part.get_content_charset()
-                    payload = part.get_payload(decode=True)
-                    
-                    # 如果有明确的字符集，直接使用
-                    if charset:
-                        try:
-                            body = payload.decode(charset)
-                        except (UnicodeDecodeError, LookupError):
-                            # 如果指定的字符集无法解码，尝试其他常见编码
-                            for encoding in ['utf-8', 'gbk', 'gb2312', 'latin1']:
-                                try:
-                                    body = payload.decode(encoding)
-                                    break
-                                except UnicodeDecodeError:
-                                    continue
-                            else:
-                                # 如果所有编码都失败，使用错误处理模式
-                                body = payload.decode('utf-8', errors='ignore')
-                    else:
-                        # 尝试多种常见编码，优先使用UTF-8
-                        for encoding in ['utf-8', 'gbk', 'gb2312', 'latin1']:
-                            try:
-                                body = payload.decode(encoding)
-                                break
-                            except UnicodeDecodeError:
-                                continue
-                        else:
-                            # 如果所有编码都失败，使用错误处理模式
-                            body = payload.decode('utf-8', errors='ignore')
-                    
-                    # 优先获取纯文本内容
+                    decoded = decode_content(part.get_payload(decode=True), part.get_content_charset())
+                    if content_type == "text/html":
+                        import re
+                        decoded = re.sub(r'<[^>]+>', '', decoded).strip()
+                        decoded = re.sub(r'\s+', ' ', decoded)
+                    body = decoded
                     if content_type == "text/plain":
                         break
                 except Exception as e:
+                    logger.warning(f"解码邮件内容时出错: {e}")
                     continue
     else:
         try:
-            charset = msg.get_content_charset()
-            payload = msg.get_payload(decode=True)
-            
-            # 如果有明确的字符集，直接使用
-            if charset:
-                try:
-                    body = payload.decode(charset)
-                except (UnicodeDecodeError, LookupError):
-                    # 如果指定的字符集无法解码，尝试其他常见编码
-                    for encoding in ['utf-8', 'gbk', 'gb2312', 'latin1']:
-                        try:
-                            body = payload.decode(encoding)
-                            break
-                        except UnicodeDecodeError:
-                            continue
-                    else:
-                        # 如果所有编码都失败，使用错误处理模式
-                        body = payload.decode('utf-8', errors='ignore')
-            else:
-                # 尝试多种常见编码，优先使用UTF-8
-                for encoding in ['utf-8', 'gbk', 'gb2312', 'latin1']:
-                    try:
-                        body = payload.decode(encoding)
-                        break
-                    except UnicodeDecodeError:
-                        continue
-                else:
-                    # 如果所有编码都失败，使用错误处理模式
-                    body = payload.decode('utf-8', errors='ignore')
+            body = decode_content(msg.get_payload(decode=True), msg.get_content_charset())
         except Exception as e:
+            logger.warning(f"解码单部分邮件内容时出错: {e}")
             body = ""
     
-    return body
+    return body[:10000] + "..." if len(body) > 10000 else body
 
-def fetch_emails_by_date_range(mail, start_date=None, end_date=None, target_email=None):
-    """根据日期范围获取邮件并解析其基本信息"""
-    # 选择收件箱
-    mail.select('inbox')
-    
-    # 如果没有提供日期范围，则默认获取最近7天的邮件
-    if not start_date and not end_date:
-        end_date = datetime.datetime.now()
-        start_date = end_date - datetime.datetime.timedelta(days=7)
-    elif isinstance(start_date, str):
-        start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
-        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.datetime.now()
-    
-    # 确保开始和结束日期也是时区感知的
-    if start_date.tzinfo is None:
-        start_date = start_date.astimezone()
-    if end_date.tzinfo is None:
-        end_date = end_date.astimezone()
-    
-    print(f"获取邮件日期范围: {start_date.strftime('%Y-%m-%d')} 到 {end_date.strftime('%Y-%m-%d')}")
-    
-    # 获取所有邮件
-    status, messages = mail.search(None, 'ALL')
-    
-    # 获取邮件ID列表
-    mail_ids = messages[0].split()
-    
-    print(f"共找到 {len(mail_ids)} 封邮件。")
-    
-    all_emails = []
-    
-    # 从最新的邮件开始检查（限制检查最近的200封邮件）
-    recent_mail_ids = mail_ids[-200:] if len(mail_ids) > 200 else mail_ids
-    
-    for mail_id in reversed(recent_mail_ids):
-        # 获取邮件的原始数据
-        status, msg_data = mail.fetch(mail_id, '(RFC822)')
-        
-        # 解析邮件内容
-        msg = email.message_from_bytes(msg_data[0][1])
-        
-        # 解码邮件主题
-        subject, encoding = decode_header(msg['Subject'])[0]
-        if isinstance(subject, bytes):
-            # 尝试多种编码解码主题
-            if encoding:
-                try:
-                    subject = subject.decode(encoding)
-                except (UnicodeDecodeError, LookupError):
-                    # 如果指定编码失败，尝试其他常见编码
-                    for enc in ['utf-8', 'gbk', 'gb2312', 'latin1']:
-                        try:
-                            subject = subject.decode(enc)
-                            break
-                        except UnicodeDecodeError:
-                            continue
-                    else:
-                        # 如果所有编码都失败，使用错误处理模式
-                        subject = subject.decode('utf-8', errors='ignore')
-            else:
-                # 尝试多种常见编码，优先使用UTF-8
-                for enc in ['utf-8', 'gbk', 'gb2312', 'latin1']:
-                    try:
-                        subject = subject.decode(enc)
-                        break
-                    except UnicodeDecodeError:
-                        continue
-                else:
-                    # 如果所有编码都失败，使用错误处理模式
-                    subject = subject.decode('utf-8', errors='ignore')
-        
-        # 获取发件人
-        from_ = msg.get('From')
-        
-        # 获取收件人
-        to_ = msg.get('To')
-        
-        # 获取发送日期
-        date_ = msg.get('Date')
-        
-        # 获取邮件正文
-        body = get_email_body(msg)
-        
-        # 解析邮件 Date 字段中的日期部分（兼容多种格式）
-        try:
-            email_date = email.utils.parsedate_to_datetime(date_)
-            # 转换为本地时区
-            email_local_date = email_date.astimezone()
-        except Exception as e:
-            print(f"日期解析错误: {e}, 原始日期: {date_}", file=sys.stderr)
-            continue
-        
-        # 检查邮件日期是否在指定范围内
-        if start_date <= email_local_date <= end_date:
-            # 如果提供了目标邮箱地址，则检查邮件是否是发送给该邮箱的
-            if target_email and to_ and target_email.lower() not in to_.lower():
-                # 如果不是发送给目标邮箱的邮件，则跳过
-                continue
-            
-            # 安全打印邮件信息，避免编码错误
-            try:
-                print(f"\n=== 邮件ID: {mail_id.decode()} ===")
-                print(f"主题: {subject}")
-                print(f"发件人: {from_}")
-                print(f"收件人: {to_}")
-                print(f"发送日期: {date_}")
-            except UnicodeEncodeError:
-                # 如果打印时出现编码错误，使用安全的打印方式
-                print(f"\n=== 邮件ID: {mail_id.decode()} ===".encode('utf-8', errors='ignore').decode('utf-8'))
-                print(f"主题: {subject}".encode('utf-8', errors='ignore').decode('utf-8'))
-                print(f"发件人: {from_}".encode('utf-8', errors='ignore').decode('utf-8'))
-                print(f"收件人: {to_}".encode('utf-8', errors='ignore').decode('utf-8'))
-                print(f"发送日期: {date_}".encode('utf-8', errors='ignore').decode('utf-8'))
-            
-            # 收集所有邮件信息（不再筛选关键词）
-            all_emails.append({
-                'subject': subject,
-                'from': from_,
-                'to': to_,
-                'date': date_,
-                'body': body,
-                'imap_id': mail_id.decode()
-            })
-    
-    return all_emails
-
-def save_to_database(emails):
-    """将所有邮件信息保存到MySQL数据库的统一表中，避免重复"""
-    conn = pymysql.connect(
-        host='localhost',
-        user='root',
-        password='123123',
-        database='job_emails',
-        charset='utf8mb4',
-        autocommit=True
-    )
-    cursor = conn.cursor()
-    
-    # 创建统一的邮件表（如果不存在）
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS `all_emails` (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            imap_id VARCHAR(255),
-            subject TEXT,
-            sender TEXT,
-            recipient TEXT,
-            send_date TEXT,
-            body LONGTEXT,
-            UNIQUE KEY unique_email (imap_id, subject(50), sender(50), send_date(50))
-        )
-    ''')
-    
-    inserted_count = 0
-    
-    for email in emails:
-        # 确保所有字符串都正确编码
-        subject = email['subject']
-        if isinstance(subject, str):
-            # 确保字符串可以正确编码为UTF-8
-            try:
-                subject.encode('utf-8')
-            except UnicodeEncodeError:
-                # 如果无法编码，使用错误处理模式
-                subject = subject.encode('utf-8', errors='ignore').decode('utf-8')
-        
-        sender = email['from']
-        if isinstance(sender, str):
-            try:
-                sender.encode('utf-8')
-            except UnicodeEncodeError:
-                sender = sender.encode('utf-8', errors='ignore').decode('utf-8')
-        
-        recipient = email.get('to', '')
-        if isinstance(recipient, str):
-            try:
-                recipient.encode('utf-8')
-            except UnicodeEncodeError:
-                recipient = recipient.encode('utf-8', errors='ignore').decode('utf-8')
-        
-        date = email['date']
-        if isinstance(date, str):
-            try:
-                date.encode('utf-8')
-            except UnicodeEncodeError:
-                date = date.encode('utf-8', errors='ignore').decode('utf-8')
-        
-        body = email.get('body', '')
-        if isinstance(body, str):
-            try:
-                body.encode('utf-8')
-            except UnicodeEncodeError:
-                body = body.encode('utf-8', errors='ignore').decode('utf-8')
-        
-        imap_id = email.get('imap_id', '')
-        if isinstance(imap_id, str):
-            try:
-                imap_id.encode('utf-8')
-            except UnicodeEncodeError:
-                imap_id = imap_id.encode('utf-8', errors='ignore').decode('utf-8')
-        
-        # 检查邮件是否已存在
-        cursor.execute("SELECT COUNT(*) FROM `all_emails` WHERE imap_id = %s AND subject = %s AND sender = %s AND send_date = %s", 
-                      (imap_id, subject, sender, date))
-        if cursor.fetchone()[0] == 0:
-            # 如果邮件不存在，则插入
-            cursor.execute('''
-                INSERT INTO `all_emails` (imap_id, subject, sender, recipient, send_date, body)
+def save_emails_to_database(emails, db_config):
+    """将邮件保存到数据库"""
+    try:
+        with pymysql.connect(
+            host=db_config['host'],
+            user=db_config['user'],
+            password=db_config['password'],
+            database=db_config['database'],
+            charset=db_config['charset'],
+            autocommit=True
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                CREATE TABLE IF NOT EXISTS all_emails (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    imap_id VARCHAR(255) NOT NULL,
+                    subject TEXT,
+                    sender TEXT,
+                    recipient TEXT,
+                    send_date TEXT,
+                    body LONGTEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_email (imap_id),
+                    INDEX idx_sender (sender(100)),
+                    INDEX idx_date (send_date(50)),
+                    INDEX idx_subject (subject(100))
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                """)
+                
+                if not emails:
+                    logger.info("No emails to save to database")
+                    return 0
+                
+                insert_query = """
+                INSERT IGNORE INTO all_emails 
+                (imap_id, subject, sender, recipient, send_date, body) 
                 VALUES (%s, %s, %s, %s, %s, %s)
-            ''', (imap_id, subject, sender, recipient, date, body))
-            inserted_count += 1
-    
-    # 提交更改并关闭连接
-    conn.commit()
-    conn.close()
-    
-    print(f"已将 {inserted_count} 封新邮件信息保存到MySQL数据库（忽略 {len(emails) - inserted_count} 封重复邮件）。")
-    return inserted_count
+                """
+                
+                email_data = [
+                    (e['imap_id'], e['subject'][:500] or '', e['sender'][:255] or '',
+                     e['recipient'][:255] or '', e['send_date'][:100] or '', e['body'])
+                    for e in emails
+                ]
+                
+                logger.info(f"Preparing to insert {len(email_data)} emails into database")
+                batch_size = 100
+                inserted_count = 0
+                for i in range(0, len(email_data), batch_size):
+                    batch = email_data[i:i+batch_size]
+                    logger.debug(f"Inserting batch {i//batch_size + 1}: {len(batch)} emails")
+                    result = cursor.executemany(insert_query, batch)
+                    # executemany的返回值是受影响的行数，对于INSERT IGNORE，这表示实际插入的行数
+                    inserted_count += result
+                    logger.info(f"Batch inserted {result} emails, total {inserted_count} emails")
+                
+                logger.info(f"Successfully inserted {inserted_count} emails")
+                return inserted_count
+    except Exception as e:
+        logger.error(f"Database connection or operation failed: {e}")
+        return 0
+
+def fetch_emails(client, start_date=None, end_date=None, email_address=None):
+    """获取邮件"""
+    try:
+        client.select_folder('INBOX')
+        logger.info("Selected INBOX folder")
+        
+        # 构建搜索条件
+        search_criteria = ['ALL']
+        if start_date and end_date:
+            try:
+                start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+                end_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d") + datetime.timedelta(days=1)
+                search_criteria = ['SINCE', start_dt, 'BEFORE', end_dt]
+                logger.info(f"Searching with date range: {start_date} to {end_date}")
+            except ValueError as e:
+                logger.error(f"Invalid date format: {e}")
+        
+        email_ids = client.search(search_criteria)
+        logger.info(f"Found {len(email_ids)} emails")
+        
+        # 限制处理数量
+        max_emails = 1000
+        if len(email_ids) > max_emails:
+            logger.info(f"Will process first {max_emails} emails")
+            email_ids = email_ids[:max_emails]
+        
+        emails = []
+        batch_size = 50
+        logger.info(f"Start processing emails, total {len(email_ids)} emails")
+        for i in range(0, len(email_ids), batch_size):
+            batch_ids = email_ids[i:i+batch_size]
+            logger.info(f"Processing batch {i//batch_size + 1}: email ID range {min(batch_ids)}-{max(batch_ids)}")
+            
+            try:
+                msg_data = client.fetch(batch_ids, ['RFC822'])
+                logger.info(f"Successfully fetched email data for batch {i//batch_size + 1}")
+                for msg_id in batch_ids:
+                    if msg_id not in msg_data or b'RFC822' not in msg_data[msg_id]:
+                        logger.warning(f"No data found for email ID {msg_id}")
+                        continue
+                    
+                    msg = email.message_from_bytes(msg_data[msg_id][b'RFC822'])
+                    
+                    # 解码主题
+                    subject = ""
+                    subject_header = decode_header(msg.get('Subject', ''))
+                    for part, encoding in subject_header:
+                        if isinstance(part, bytes):
+                            subject += part.decode(encoding or 'utf-8', errors='ignore')
+                        else:
+                            subject += str(part)
+                    
+                    # 获取基本信息
+                    sender = msg.get('From', '')
+                    recipient = msg.get('To', '')
+                    send_date = msg.get('Date', '')
+                    body = get_email_body(msg)
+                    
+                    # 过滤自己发送的邮件
+                    if email_address and email_address in sender:
+                        logger.info(f"Skipping self-sent email: {subject[:50]}...")
+                        continue
+                    
+                    email_info = {
+                        'imap_id': str(msg_id),
+                        'subject': subject or '',
+                        'sender': sender or '',
+                        'recipient': recipient or '',
+                        'send_date': send_date or '',
+                        'body': body or ''
+                    }
+                    emails.append(email_info)
+                    logger.debug(f"Successfully processed email: {subject[:50]}...")
+            except Exception as e:
+                logger.error(f"Error fetching email batch data: {e}")
+                continue
+        
+        logger.info(f"Email processing completed, processed {len(emails)} emails")
+        return emails
+        
+    except Exception as e:
+        logger.error(f"Error fetching emails: {e}")
+        return []
 
 def main():
     """主函数"""
+    # 获取配置
+    email = sys.argv[1] if len(sys.argv) >= 4 else config.config['email']['address']
+    password = sys.argv[2] if len(sys.argv) >= 4 else config.config['email']['password']
+    imap_server = sys.argv[3] if len(sys.argv) >= 4 else config.config['email']['imap_server']
+    start_date = sys.argv[4] if len(sys.argv) > 4 else None
+    end_date = sys.argv[5] if len(sys.argv) > 5 else None
+    
+    db_config = {
+        'host': config.config['db']['host'],
+        'user': config.config['db']['user'],
+        'password': config.config['db']['password'],
+        'database': 'job_emails',
+        'charset': config.config['db']['charset']
+    }
+    
+    # 验证配置
+    if not all([email, password, imap_server]):
+        logger.error("Missing required email configuration")
+        return 0
+    if not all([db_config['host'], db_config['user'], db_config['password']]):
+        logger.error("Missing required database configuration")
+        return 0
+    
     try:
-        # 解析命令行参数
-        email = None
-        password = None
-        imap_server = None
-        start_date = None
-        end_date = None
+        logger.info(f"Connecting to email: {email}@{imap_server}")
+        if start_date and end_date:
+            logger.info(f"Searching with date range: {start_date} to {end_date}")
         
-        if len(sys.argv) >= 4:
-            email = sys.argv[1]
-            password = sys.argv[2]
-            imap_server = sys.argv[3]
-            
-            if len(sys.argv) >= 6:
-                start_date = sys.argv[4]
-                end_date = sys.argv[5]
+        mail = connect_to_qq_mail(email, password, imap_server)
+        logger.info("Start fetching emails...")
+        emails = fetch_emails(mail, start_date, end_date, email)
+        logger.info(f"Email fetching completed, fetched {len(emails)} emails")
         
-        # 如果没有提供邮箱信息，使用环境变量或默认配置
-        if not email:
-            email = os.getenv('EMAIL_ADDRESS', '1608157098@qq.com')
-        if not password:
-            password = os.getenv('EMAIL_PASSWORD', 'dduplvjlpgqjgjjh')
-        if not imap_server:
-            imap_server = os.getenv('IMAP_SERVER', 'imap.qq.com')
+        try:
+            mail.logout()
+            logger.info("Email connection closed")
+        except Exception as e:
+            logger.warning(f"Error closing email connection: {e}")
         
-        if not email or not password or not imap_server:
-            print("缺少必要的邮箱配置信息，请提供邮箱地址、授权码和IMAP服务器地址")
+        if not emails:
+            logger.info("No emails fetched")
+            print("没有获取到任何邮件")  # 确保输出到stdout
             return 0
         
-        # 连接到邮箱
-        mail = connect_to_qq_mail(email, password, imap_server)
-        
-        # 根据日期范围获取邮件，只获取发送给目标邮箱的邮件
-        emails = fetch_emails_by_date_range(mail, start_date, end_date, email)
-        
-        # 保存到数据库
-        inserted_count = save_to_database(emails)
-        
-        # 关闭连接
-        mail.logout()
-        
-        print(f"\n处理完成，共处理了 {len(emails)} 封邮件，新增 {inserted_count} 封邮件。")
+        logger.info(f"Start saving {len(emails)} emails to database...")
+        inserted_count = save_emails_to_database(emails, db_config)
+        logger.info(f"Email saving completed, inserted {inserted_count} new emails")
+        print(f"成功插入 {inserted_count} 封邮件")  # 确保输出到stdout
         return inserted_count
         
     except Exception as e:
-        print(f"发生错误: {e}", file=sys.stderr)
+        logger.error(f"Error occurred: {e}")
+        print(f"发生错误: {e}")  # 确保输出到stdout
         return 0
 
 if __name__ == "__main__":
-    main()
+    result = main()
+    print(f"脚本执行完成，返回值: {result}")  # 添加最终输出

@@ -1,0 +1,40 @@
+服务器运行在 http://localhost:3001
+正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py [
+  'D:\\面试管理系统\\script\\qq_email_imap.py',
+  '1608157098@qq.com',
+  'dduplvjlpgqjgjjh',
+  'imap.qq.com',
+  '2025-09-19',
+  '2025-09-20'
+]
+邮件获取脚本错误: 2025-09-20 23:22:36,281 - INFO - Connecting to email: 1608157098@qq.com@imap.qq.com
+2025-09-20 23:22:36,281 - INFO - Searching with date range: 2025-09-19 to 2025-09-20
+
+邮件获取脚本错误: 2025-09-20 23:22:36,886 - INFO - Successfully connected and logged in to email: 1608157098@qq.com
+2025-09-20 23:22:36,886 - INFO - Start fetching emails...
+
+邮件获取脚本错误: 2025-09-20 23:22:36,971 - INFO - Selected INBOX folder
+
+邮件获取脚本错误: 2025-09-20 23:22:36,974 - INFO - Searching with date range: 2025-09-19 to 2025-09-20
+
+邮件获取脚本错误: 2025-09-20 23:22:37,105 - INFO - Found 44 emails
+2025-09-20 23:22:37,105 - INFO - Start processing emails, total 44 emails
+
+邮件获取脚本错误: 2025-09-20 23:22:37,105 - INFO - Processing batch 1: email ID range 2608-2652
+
+邮件获取脚本错误: 2025-09-20 23:22:39,569 - INFO - Successfully fetched email data for batch 1
+
+邮件获取脚本错误: 2025-09-20 23:22:39,645 - INFO - Email processing completed, processed 44 emails
+
+邮件获取脚本错误: 2025-09-20 23:22:39,646 - INFO - Email fetching completed, fetched 44 emails
+
+邮件获取脚本错误: 2025-09-20 23:22:39,691 - INFO - Email connection closed
+2025-09-20 23:22:39,691 - INFO - Start saving 44 emails to database...
+
+邮件获取脚本错误: 2025-09-20 23:22:39,717 - INFO - Preparing to insert 44 emails into database
+
+邮件获取脚本错误: 2025-09-20 23:22:39,727 - INFO - Batch inserted 44 emails, total 44 emails
+2025-09-20 23:22:39,727 - INFO - Successfully inserted 44 emails
+
+邮件获取脚本错误: 2025-09-20 23:22:39,727 - INFO - Email saving completed, inserted 44 new emails
+

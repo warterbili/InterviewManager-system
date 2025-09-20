@@ -161,14 +161,24 @@
     <script>
         // 检查是否有配置，如果没有则重定向到配置页面
         document.addEventListener('DOMContentLoaded', function() {
-            // 检查是否至少有一个配置项存在
-            const hasDbConfig = localStorage.getItem('db_host') || localStorage.getItem('db_user') || localStorage.getItem('db_password');
-            const hasEmailConfig = localStorage.getItem('email_address') || localStorage.getItem('email_password') || localStorage.getItem('imap_server');
-            
-            // 如果没有任何配置，重定向到配置页面
-            if (!hasDbConfig && !hasEmailConfig) {
-                window.location.href = '/config';
-            }
+            // 从服务器获取配置
+            fetch('/api/config')
+                .then(response => response.json())
+                .then(config => {
+                    // 检查是否至少有一个配置项存在
+                    const hasDbConfig = config.db.host || config.db.user || config.db.password;
+                    const hasEmailConfig = config.email.address || config.email.password || config.email.imap_server;
+                    
+                    // 如果没有任何配置，重定向到配置页面
+                    if (!hasDbConfig && !hasEmailConfig) {
+                        window.location.href = '/config';
+                    }
+                })
+                .catch(error => {
+                    console.error('获取配置失败:', error);
+                    // 如果获取配置失败，也重定向到配置页面
+                    window.location.href = '/config';
+                });
         });
     </script>
 </body>

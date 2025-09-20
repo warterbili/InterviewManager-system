@@ -152,10 +152,23 @@
 
     <script>
         // 检查配置，如果没有则重定向到配置页面
-        if (!localStorage.getItem('db_host') && !localStorage.getItem('db_user') && !localStorage.getItem('db_password') &&
-            !localStorage.getItem('email_address') && !localStorage.getItem('email_password') && !localStorage.getItem('imap_server')) {
-            window.location.href = '/config';
-        }
+        // 从服务器获取配置
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                // 检查是否至少有一个数据库配置项存在
+                const hasDbConfig = config.db.host || config.db.user || config.db.password;
+                
+                // 如果没有数据库配置，重定向到配置页面
+                if (!hasDbConfig) {
+                    window.location.href = '/config';
+                }
+            })
+            .catch(error => {
+                console.error('获取配置失败:', error);
+                // 如果获取配置失败，也重定向到配置页面
+                window.location.href = '/config';
+            });
 
         // API基础URL
         const API_BASE = '/api';
@@ -220,7 +233,15 @@
             showMessage('正在加载面试日程数据...', 'loading');
             
             fetch(`${API_BASE}/interviews`)
-                .then(response => response.json())
+                .then(response => {
+                    // 检查响应状态
+                    if (response.status === 503) {
+                        // 数据库未初始化，重定向到配置页面
+                        window.location.href = '/config';
+                        return;
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     // 清空现有数据
                     table.innerHTML = '';
@@ -329,8 +350,19 @@
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                // 检查响应状态
+                if (response.status === 503) {
+                    // 数据库未初始化，重定向到配置页面
+                    window.location.href = '/config';
+                    return;
+                }
+                return response.json();
+            })
             .then(result => {
+                // 检查是否有结果返回
+                if (!result) return;
+                
                 showMessage(`数据保存成功！共保存 ${data.length} 条记录`, 'success');
             })
             .catch(error => {

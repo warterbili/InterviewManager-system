@@ -128,12 +128,12 @@
             <form id="databaseConfigForm">
                 <div class="form-group">
                     <label for="dbHost">数据库主机</label>
-                    <input type="text" id="dbHost" class="form-control" placeholder="localhost">
+                    <input type="text" id="dbHost" class="form-control" placeholder="数据库主机">
                 </div>
                 
                 <div class="form-group">
                     <label for="dbUser">数据库用户名</label>
-                    <input type="text" id="dbUser" class="form-control" placeholder="root">
+                    <input type="text" id="dbUser" class="form-control" placeholder="数据库用户名">
                 </div>
                 
                 <div class="form-group">
@@ -143,7 +143,7 @@
                 
                 <div class="form-group">
                     <label for="dbCharset">数据库字符集</label>
-                    <input type="text" id="dbCharset" class="form-control" placeholder="utf8mb4" value="utf8mb4">
+                    <input type="text" id="dbCharset" class="form-control" placeholder="数据库字符集">
                 </div>
             </form>
         </div>
@@ -157,7 +157,7 @@
             <form id="emailConfigForm">
                 <div class="form-group">
                     <label for="emailAddress">邮箱地址</label>
-                    <input type="email" id="emailAddress" class="form-control" placeholder="your_email@qq.com">
+                    <input type="email" id="emailAddress" class="form-control" placeholder="邮箱地址">
                 </div>
                 
                 <div class="form-group">
@@ -167,7 +167,7 @@
                 
                 <div class="form-group">
                     <label for="imapServer">IMAP服务器</label>
-                    <input type="text" id="imapServer" class="form-control" placeholder="imap.qq.com" value="imap.qq.com">
+                    <input type="text" id="imapServer" class="form-control" placeholder="IMAP服务器">
                 </div>
             </form>
         </div>
@@ -193,25 +193,22 @@
 
         // 页面加载时获取现有配置
         window.addEventListener('DOMContentLoaded', function() {
-            // 从localStorage获取配置
-            const config = {
-                db_host: localStorage.getItem('db_host') || 'localhost',
-                db_user: localStorage.getItem('db_user') || 'root',
-                db_password: localStorage.getItem('db_password') || 'xxxxx',
-                db_charset: localStorage.getItem('db_charset') || 'utf8mb4',
-                email_address: localStorage.getItem('email_address') || 'example-email@qq.com',
-                email_password: localStorage.getItem('email_password') || 'xxxxxxxxxxxxx',
-                imap_server: localStorage.getItem('imap_server') || 'imap.qq.com'
-            };
-            
-            // 填充表单数据
-            document.getElementById('dbHost').value = config.db_host;
-            document.getElementById('dbUser').value = config.db_user;
-            document.getElementById('dbPassword').value = config.db_password;
-            document.getElementById('dbCharset').value = config.db_charset;
-            document.getElementById('emailAddress').value = config.email_address;
-            document.getElementById('emailPassword').value = config.email_password;
-            document.getElementById('imapServer').value = config.imap_server;
+            // 从服务器获取配置
+            fetch('/api/config')
+                .then(response => response.json())
+                .then(config => {
+                    // 填充表单数据
+                    document.getElementById('dbHost').value = config.db.host || '';
+                    document.getElementById('dbUser').value = config.db.user || '';
+                    document.getElementById('dbPassword').value = config.db.password || '';
+                    document.getElementById('dbCharset').value = config.db.charset || '';
+                    document.getElementById('emailAddress').value = config.email.address || '';
+                    document.getElementById('emailPassword').value = config.email.password || '';
+                    document.getElementById('imapServer').value = config.email.imap_server || '';
+                })
+                .catch(error => {
+                    console.error('获取配置失败:', error);
+                });
         });
 
         // 保存配置
@@ -227,16 +224,38 @@
                 imap_server: document.getElementById('imapServer').value
             };
             
-            // 保存到localStorage
-            localStorage.setItem('db_host', config.db_host);
-            localStorage.setItem('db_user', config.db_user);
-            localStorage.setItem('db_password', config.db_password);
-            localStorage.setItem('db_charset', config.db_charset);
-            localStorage.setItem('email_address', config.email_address);
-            localStorage.setItem('email_password', config.email_password);
-            localStorage.setItem('imap_server', config.imap_server);
-            
-            showAlert('配置保存成功！', 'success');
+            // 发送到服务器
+            fetch('/api/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    db: {
+                        host: config.db_host,
+                        user: config.db_user,
+                        password: config.db_password,
+                        charset: config.db_charset
+                    },
+                    email: {
+                        address: config.email_address,
+                        password: config.email_password,
+                        imap_server: config.imap_server
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showAlert('配置保存成功！', 'success');
+                // 保存成功后重定向到主页
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('配置保存失败：' + error.message, 'error');
+            });
         });
     </script>
 </body>
