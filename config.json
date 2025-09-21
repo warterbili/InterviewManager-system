@@ -2,12 +2,12 @@
   "db": {
     "host": "localhost",
     "user": "root",
-    "password": "123123",
+    "password": "",
     "charset": "utf8mb4"
   },
   "email": {
-    "address": "1608157098@qq.com",
-    "password": "dduplvjlpgqjgjjh",
+    "address": "",
+    "password": "",
     "imap_server": "imap.qq.com"
   }
 }
