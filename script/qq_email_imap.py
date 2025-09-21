@@ -7,14 +7,18 @@ import os
 from imapclient import IMAPClient
 import ssl
 import logging
+import io
 
 # 导入配置模块
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import config
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import script.config as config
 
 # 配置日志
 # logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', encoding='utf-8')
 # logger = logging.getLogger(__name__)
+
+# 设置标准输出编码为UTF-8
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def connect_to_qq_mail(email, password, imap_server):
     """连接到邮箱并登录"""
@@ -25,10 +29,10 @@ def connect_to_qq_mail(email, password, imap_server):
         # 使用邮箱地址和授权码登录
         client.login(email, password)
         
-        # logger.info(f"Successfully connected and logged in to email: {email}")
+        print(f"成功连接并登录邮箱: {email}")
         return client
     except Exception as e:
-        # logger.error(f"Failed to connect to email: {e}")
+        print(f"连接邮箱失败: {e}")
         raise
 
 def get_email_body(msg):
@@ -65,13 +69,13 @@ def get_email_body(msg):
                     if content_type == "text/plain":
                         break
                 except Exception as e:
-                    # logger.warning(f"解码邮件内容时出错: {e}")
+                    print(f"解码邮件内容时出错: {e}")
                     continue
     else:
         try:
             body = decode_content(msg.get_payload(decode=True), msg.get_content_charset())
         except Exception as e:
-            # logger.warning(f"解码单部分邮件内容时出错: {e}")
+            print(f"解码单部分邮件内容时出错: {e}")
             body = ""
     
     return body[:10000] + "..." if len(body) > 10000 else body
@@ -79,6 +83,7 @@ def get_email_body(msg):
 def save_emails_to_database(emails, db_config):
     """将邮件保存到数据库"""
     try:
+        print(f"[DEBUG] 尝试连接数据库: {db_config['database']}")
         with pymysql.connect(
             host=db_config['host'],
             user=db_config['user'],
@@ -87,63 +92,80 @@ def save_emails_to_database(emails, db_config):
             charset=db_config['charset'],
             autocommit=True
         ) as connection:
+            print("[DEBUG] 数据库连接成功")
             with connection.cursor() as cursor:
+                print("[DEBUG] 创建/检查邮件表...")
                 cursor.execute("""
                 CREATE TABLE IF NOT EXISTS all_emails (
                     id INT AUTO_INCREMENT PRIMARY KEY,
-                    imap_id VARCHAR(255) NOT NULL,
+                    imap_id VARCHAR(255),
                     subject TEXT,
                     sender TEXT,
                     recipient TEXT,
                     send_date TEXT,
                     body LONGTEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_email (imap_id),
-                    INDEX idx_sender (sender(100)),
-                    INDEX idx_date (send_date(50)),
-                    INDEX idx_subject (subject(100))
+                    delivered BOOLEAN DEFAULT FALSE,
+                    UNIQUE KEY unique_email (imap_id, subject(50), sender(50), send_date(50))
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """)
+                print("[DEBUG] 邮件表创建/检查完成")
                 
                 if not emails:
-                    # logger.info("No emails to save to database")
+                    print("[DEBUG] 没有邮件需要保存到数据库")
                     return 0
                 
+                # 先检查数据库中已有的邮件数量
+                cursor.execute("SELECT COUNT(*) as count FROM all_emails")
+                result = cursor.fetchone()
+                existing_count = result[0] if result else 0
+                print(f"[DEBUG] 数据库中已有邮件数量: {existing_count}")
+                
                 insert_query = """
-                INSERT IGNORE INTO all_emails 
-                (imap_id, subject, sender, recipient, send_date, body) 
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO all_emails 
+                (imap_id, subject, sender, recipient, send_date, body, delivered) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                subject=VALUES(subject), sender=VALUES(sender), recipient=VALUES(recipient), 
+                send_date=VALUES(send_date), body=VALUES(body), delivered=VALUES(delivered)
                 """
                 
                 email_data = [
-                    (e['imap_id'], e['subject'][:500] or '', e['sender'][:255] or '',
-                     e['recipient'][:255] or '', e['send_date'][:100] or '', e['body'])
+                    (str(e['imap_id']), e['subject'] or '', e['sender'] or '',
+                     e['recipient'] or '', e['send_date'] or '', e['body'], False)
                     for e in emails
                 ]
                 
-                # logger.info(f"Preparing to insert {len(email_data)} emails into database")
+                print(f"[DEBUG] 准备将 {len(email_data)} 封邮件插入数据库")
+                if email_data:
+                    print(f"[DEBUG] 第一条邮件数据预览: ID={email_data[0][0]}, Subject={email_data[0][1][:50]}...")
+                
                 batch_size = 100
-                inserted_count = 0
+                processed_count = len(email_data)  # 记录处理的邮件数量
+                inserted_count = 0  # 记录实际插入的邮件数量
+                
                 for i in range(0, len(email_data), batch_size):
                     batch = email_data[i:i+batch_size]
-                    # logger.debug(f"Inserting batch {i//batch_size + 1}: {len(batch)} emails")
-                    result = cursor.executemany(insert_query, batch)
-                    # executemany的返回值是受影响的行数，对于INSERT IGNORE，这表示实际插入的行数
-                    inserted_count += result
-                    # logger.info(f"Batch inserted {result} emails, total {inserted_count} emails")
+                    print(f"[DEBUG] 正在插入第 {i//batch_size + 1} 批邮件，共 {len(batch)} 封")
+                    # 执行插入或更新操作
+                    cursor.executemany(insert_query, batch)
+                    # 获取受影响的行数
+                    affected_rows = cursor.rowcount
+                    inserted_count += affected_rows
+                    print(f"[DEBUG] 第 {i//batch_size + 1} 批邮件处理完成，影响 {affected_rows} 行")
                 
-                # logger.info(f"Successfully inserted {inserted_count} emails")
+                print(f"[DEBUG] 邮件保存完成，总共处理 {processed_count} 封邮件，实际插入 {inserted_count} 封新邮件")
                 return inserted_count
     except Exception as e:
-        # logger.error(f"Database connection or operation failed: {e}")
+        print(f"[DEBUG] 数据库连接或操作失败: {e}")
+        import traceback
+        traceback.print_exc()
         return 0
 
 def fetch_emails(client, start_date=None, end_date=None, email_address=None):
     """获取邮件"""
     try:
         client.select_folder('INBOX')
-        # logger.info("Selected INBOX folder")
+        print("已选择收件箱文件夹")
         
         # 构建搜索条件
         search_criteria = ['ALL']
@@ -152,9 +174,9 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                 start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
                 end_dt = datetime.datetime.strptime(end_date, "%Y-%m-%d") + datetime.timedelta(days=1)
                 search_criteria = ['SINCE', start_dt, 'BEFORE', end_dt]
-                # logger.info(f"Searching with date range: {start_date} to {end_date}")
+                print(f"使用日期范围搜索: {start_date} 到 {end_date}")
             except ValueError as e:
-                # logger.error(f"Invalid date format: {e}")
+                print(f"日期格式无效: {e}")
                 # 如果日期格式无效，则使用默认搜索条件
                 search_criteria = ['ALL']
         else:
@@ -162,27 +184,27 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
             search_criteria = ['ALL']
         
         email_ids = client.search(search_criteria)
-        # logger.info(f"Found {len(email_ids)} emails")
+        print(f"找到 {len(email_ids)} 封邮件")
         
         # 限制处理数量
         max_emails = 1000
         if len(email_ids) > max_emails:
-            # logger.info(f"Will process first {max_emails} emails")
+            print(f"将处理前 {max_emails} 封邮件")
             email_ids = email_ids[:max_emails]
         
         emails = []
         batch_size = 50
-        # logger.info(f"Start processing emails, total {len(email_ids)} emails")
+        print(f"开始处理邮件，总共 {len(email_ids)} 封")
         for i in range(0, len(email_ids), batch_size):
             batch_ids = email_ids[i:i+batch_size]
-            # logger.info(f"Processing batch {i//batch_size + 1}: email ID range {min(batch_ids)}-{max(batch_ids)}")
+            print(f"正在处理第 {i//batch_size + 1} 批邮件，邮件ID范围 {min(batch_ids)}-{max(batch_ids)}")
             
             try:
                 msg_data = client.fetch(batch_ids, ['RFC822'])
-                # logger.info(f"Successfully fetched email data for batch {i//batch_size + 1}")
+                print(f"第 {i//batch_size + 1} 批邮件数据获取完成")
                 for msg_id in batch_ids:
                     if msg_id not in msg_data or b'RFC822' not in msg_data[msg_id]:
-                        # logger.warning(f"No data found for email ID {msg_id}")
+                        print(f"未找到邮件ID {msg_id} 的数据")
                         continue
                     
                     msg = email.message_from_bytes(msg_data[msg_id][b'RFC822'])
@@ -200,94 +222,90 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                     sender = msg.get('From', '')
                     recipient = msg.get('To', '')
                     send_date = msg.get('Date', '')
+                    
+                    # 获取邮件正文
                     body = get_email_body(msg)
                     
-                    # 过滤自己发送的邮件
-                    if email_address and email_address in sender:
-                        # logger.info(f"Skipping self-sent email: {subject[:50]}...")
-                        continue
+                    emails.append({
+                        'imap_id': msg_id,
+                        'subject': subject,
+                        'sender': sender,
+                        'recipient': recipient,
+                        'send_date': send_date,
+                        'body': body
+                    })
                     
-                    email_info = {
-                        'imap_id': str(msg_id),
-                        'subject': subject or '',
-                        'sender': sender or '',
-                        'recipient': recipient or '',
-                        'send_date': send_date or '',
-                        'body': body or ''
-                    }
-                    emails.append(email_info)
-                    # logger.debug(f"Successfully processed email: {subject[:50]}...")
+                    # 每处理10封邮件输出一次进度
+                    if len(emails) % 10 == 0:
+                        print(f"已处理 {len(emails)} 封邮件")
+                
+                print(f"第 {i//batch_size + 1} 批邮件处理完成")
             except Exception as e:
-                # logger.error(f"Error fetching email batch data: {e}")
+                print(f"处理第 {i//batch_size + 1} 批邮件时出错: {e}")
                 continue
         
-        # logger.info(f"Email processing completed, processed {len(emails)} emails")
+        print(f"邮件获取完成，总共处理 {len(emails)} 封邮件")
         return emails
-        
     except Exception as e:
-        # logger.error(f"Error fetching emails: {e}")
+        print(f"获取邮件时出错: {e}")
         return []
 
 def main():
     """主函数"""
-    # 获取配置
-    email = sys.argv[1] if len(sys.argv) >= 4 else config.config['email']['address']
-    password = sys.argv[2] if len(sys.argv) >= 4 else config.config['email']['password']
-    imap_server = sys.argv[3] if len(sys.argv) >= 4 else config.config['email']['imap_server']
-    start_date = sys.argv[4] if len(sys.argv) > 4 else None
-    end_date = sys.argv[5] if len(sys.argv) > 5 else None
-    
-    db_config = {
-        'host': config.config['db']['host'],
-        'user': config.config['db']['user'],
-        'password': config.config['db']['password'],
-        'database': 'job_emails',
-        'charset': config.config['db']['charset']
-    }
-    
-    # 验证配置
-    if not all([email, password, imap_server]):
-        logger.error("Missing required email configuration")
-        return 0
-    if not all([db_config['host'], db_config['user'], db_config['password']]):
-        logger.error("Missing required database configuration")
-        return 0
-    
     try:
-        # logger.info(f"Connecting to email: {email}@{imap_server}")
+        if len(sys.argv) < 4:
+            print("用法: python qq_email_imap.py <email> <password> <imap_server> [start_date] [end_date]", file=sys.stderr)
+            sys.exit(1)
+        
+        email = sys.argv[1]
+        password = sys.argv[2]
+        imap_server = sys.argv[3]
+        start_date = sys.argv[4] if len(sys.argv) > 4 else None
+        end_date = sys.argv[5] if len(sys.argv) > 5 else None
+        
+        print(f"[DEBUG] 开始执行邮件获取脚本")
+        print(f"[DEBUG] 邮箱: {email}")
         if start_date and end_date:
-            # logger.info(f"Searching with date range: {start_date} to {end_date}")
-            pass  # 这里可能需要添加更多的逻辑，但现在只是占位符
+            print(f"[DEBUG] 日期范围: {start_date} 到 {end_date}")
         
-        mail = connect_to_qq_mail(email, password, imap_server)
-        # logger.info("Start fetching emails...")
-        emails = fetch_emails(mail, start_date, end_date, email)
-        # logger.info(f"Email fetching completed, fetched {len(emails)} emails")
+        # 连接邮箱
+        client = connect_to_qq_mail(email, password, imap_server)
         
+        # 获取邮件
+        emails = fetch_emails(client, start_date, end_date, email)
+        processed_count = len(emails)  # 记录处理的邮件数量
+        
+        print(f"[DEBUG] 获取到的邮件总数: {processed_count}")
+        
+        # 保存到数据库
+        inserted_count = 0
+        if emails:
+            db_config = {
+                'host': config.config['db']['host'],
+                'user': config.config['db']['user'],
+                'password': config.config['db']['password'],
+                'database': 'job_emails',
+                'charset': config.config['db']['charset']
+            }
+            print(f"[DEBUG] 数据库配置: {db_config}")
+            inserted_count = save_emails_to_database(emails, db_config)
+            print(f"[DEBUG] 总共处理 {processed_count} 封邮件，新增 {inserted_count} 封邮件")
+            print(f"总共处理 {processed_count} 封邮件，新增 {inserted_count} 封邮件")
+        else:
+            print("[DEBUG] 没有获取到任何邮件")
+            print("[DEBUG] 总共处理 0 封邮件，新增 0 封邮件")
+            print("没有获取到任何邮件")
+            print("总共处理 0 封邮件，新增 0 封邮件")
+        
+        # 关闭连接
         try:
-            mail.logout()
-            # logger.info("Email connection closed")
+            client.logout()
+            print("[DEBUG] 邮箱连接已关闭")
         except Exception as e:
-            # logger.warning(f"Error closing email connection: {e}")
-            # 记录错误但继续执行
-            pass
-        
-        if not emails:
-            # logger.info("No emails fetched")
-            print("没有获取到任何邮件")  # 确保输出到stdout
-            return 0
-        
-        # logger.info(f"Start saving {len(emails)} emails to database...")
-        inserted_count = save_emails_to_database(emails, db_config)
-        # logger.info(f"Email saving completed, inserted {inserted_count} new emails")
-        print(f"成功插入 {inserted_count} 封邮件")  # 确保输出到stdout
-        return inserted_count
-        
+            print(f"[DEBUG] 关闭邮箱连接时出错: {e}")
     except Exception as e:
-        # logger.error(f"Error occurred: {e}")
-        print(f"发生错误: {e}")  # 确保输出到stdout
-        return 0
+        print(f"[DEBUG] 主函数执行时发生错误: {e}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
-    result = main()
-    print(f"脚本执行完成，返回值: {result}")  # 添加最终输出
+    main()

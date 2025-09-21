@@ -143,8 +143,10 @@ def fetch_email_body_by_imap_id(mail, imap_id):
                 # logger.info(f"邮箱中可用的IMAP ID数量: {len(all_ids)}")
                 if len(all_ids) > 0:
                     # logger.info(f"最近的10个IMAP ID: {sorted(all_ids, reverse=True)[:10]}")
+                    pass
             except Exception as search_error:
                 # logger.error(f"无法获取邮箱中的邮件列表: {search_error}")
+                pass
             return None
         
         # 检查数据
@@ -156,8 +158,10 @@ def fetch_email_body_by_imap_id(mail, imap_id):
                 # logger.info(f"邮箱中可用的IMAP ID数量: {len(all_ids)}")
                 if len(all_ids) > 0:
                     # logger.info(f"最近的10个IMAP ID: {sorted(all_ids, reverse=True)[:10]}")
+                    pass
             except Exception as search_error:
                 # logger.error(f"无法获取邮箱中的邮件列表: {search_error}")
+                pass
             return None
         
         # 检查返回的数据中是否包含请求的ID
@@ -178,10 +182,12 @@ def fetch_email_body_by_imap_id(mail, imap_id):
         body = get_email_body(msg)
         
         return body
-    # logger.error(f"获取邮件正文时出错: {e}")
+    except Exception as e:
+        # logger.error(f"获取邮件正文时出错: {e}")
         # 添加更多调试信息
         import traceback
         # logger.error(f"Traceback: {traceback.format_exc()}")
+        return None
 
 def main():
     """主函数"""
@@ -222,6 +228,7 @@ def main():
             mail.logout()
         except Exception as e:
             # logger.warning(f"关闭邮箱连接时出错: {e}")
+            pass
         
         if body is not None:
             # 确保输出编码正确

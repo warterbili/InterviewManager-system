@@ -109,12 +109,6 @@
             align-items: center;
         }
 
-        .modal-body {
-            padding: 1.5rem;
-            max-height: calc(80vh - 100px);
-            overflow-y: auto;
-        }
-
         .modal-close {
             color: white;
             font-size: 1.5rem;
@@ -131,6 +125,12 @@
 
         .modal-close:hover {
             background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: calc(80vh - 100px);
+            overflow-y: auto;
         }
 
         .modal-actions {
@@ -172,6 +172,53 @@
             justify-content: center;
         }
 
+        /* 邮件表格优化样式 */
+        .email-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+
+        .email-table th, .email-table td {
+            padding: 0.75rem;
+            text-align: left;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .email-table th:nth-child(1), .email-table td:nth-child(1) { /* 选择框列 */
+            width: 40px;
+        }
+
+        .email-table th:nth-child(2), .email-table td:nth-child(2) { /* 主题列 */
+            width: 40%;
+        }
+
+        .email-table th:nth-child(3), .email-table td:nth-child(3) { /* 发件人列 */
+            width: 20%;
+        }
+
+        .email-table th:nth-child(4), .email-table td:nth-child(4) { /* 时间列 */
+            width: 15%;
+        }
+
+        .email-table th:nth-child(5), .email-table td:nth-child(5) { /* 投递状态列 */
+            width: 100px;
+            text-align: center;
+        }
+
+        .email-table th:nth-child(6), .email-table td:nth-child(6) { /* 操作列 */
+            width: 150px;
+            text-align: center;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow-sm);
+        }
+
         @media (max-width: 768px) {
             .filters {
                 flex-direction: column;
@@ -188,6 +235,14 @@
             
             .form-actions {
                 flex-direction: column;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            .email-table {
+                width: 800px; /* 在小屏幕上设置固定宽度，允许水平滚动 */
             }
         }
     </style>
@@ -260,19 +315,20 @@
                 <div id="message"></div>
                 
                 <div class="table-container">
-                    <table id="emailTable">
+                    <table id="emailTable" class="email-table">
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()"></th>
                                 <th>邮件主题</th>
                                 <th>发件人</th>
                                 <th>发送时间</th>
+                                <th>投递状态</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="5" class="loading">加载中...</td>
+                                <td colspan="6" class="loading">加载中...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -447,11 +503,33 @@
                 // 检查是否有结果返回
                 if (!result) return;
                 
+                console.log('[DEBUG] 收到后端返回的数据:', result);
+                
                 if (result.success) {
                     const endTime = Date.now();
                     const duration = Math.round((endTime - startTime) / 1000);
 
-                    showMessage(`邮件获取完成！耗时${duration}秒，新增 ${result.insertedCount} 封邮件`, 'success');
+                    // 构建更详细的消息
+                    let detailedMessage = result.message || `邮件获取完成！耗时${duration}秒`;
+                    console.log('[DEBUG] 处理前的消息:', detailedMessage);
+                    console.log('[DEBUG] processedCount值:', result.processedCount);
+                    
+                    // 确保processedCount是有效数字
+                    const processedCount = (result.processedCount !== undefined && !isNaN(result.processedCount)) ? 
+                                          parseInt(result.processedCount) : 0;
+                    console.log('[DEBUG] 转换后的processedCount值:', processedCount);
+                    
+                    if (processedCount !== undefined && processedCount !== null) {
+                        if (processedCount === 0) {
+                            detailedMessage = `邮件获取完成！耗时${duration}秒，没有找到新邮件`;
+                        } else {
+                            detailedMessage = `邮件获取完成！耗时${duration}秒，获取到 ${processedCount} 封新邮件`;
+                        }
+                    }
+                    
+                    console.log('[DEBUG] 处理后的消息:', detailedMessage);
+
+                    showMessage(detailedMessage, 'success');
                     // 重新加载邮件数据
                     loadData();
                 } else {
@@ -554,19 +632,38 @@
                         const row = table.insertRow();
                         row.dataset.id = email.id;
                         
+                        // 为已投递的邮件添加特殊样式
+                        if (email.is_delivered) {
+                            row.style.backgroundColor = '#e6f7e6'; // 浅绿色背景
+                        }
+                        
                         const cell1 = row.insertCell(0); // 选择框列
                         const cell2 = row.insertCell(1); // 主题列
                         const cell3 = row.insertCell(2); // 发件人列
                         const cell4 = row.insertCell(3); // 时间列
-                        const cell5 = row.insertCell(4); // 操作列
+                        const cell5 = row.insertCell(4); // 投递状态列
+                        const cell6 = row.insertCell(5); // 操作列
                         
                         cell1.innerHTML = `<input type="checkbox" class="select-checkbox" data-id="${email.id}">`;
                         cell2.textContent = email.subject || '无主题';
                         cell3.textContent = email.sender || '未知发件人';
                         cell4.textContent = formatEmailDate(email.send_date);
                         
+                        // 为已投递的邮件添加标记
+                        if (email.is_delivered) {
+                            cell2.innerHTML = `<span style="color: #28a745; font-weight: bold;">[已投递] </span>${email.subject || '无主题'}`;
+                        }
+                        
+                        // 添加投递状态开关
+                        const toggleButton = document.createElement('button');
+                        toggleButton.className = `btn ${email.is_delivered ? 'btn-success' : 'btn-secondary'}`;
+                        toggleButton.textContent = email.is_delivered ? '已投递' : '未投递';
+                        toggleButton.onclick = () => toggleDeliveryStatus(email.id, !email.is_delivered, row);
+                        
+                        cell5.appendChild(toggleButton);
+                        
                         // 添加操作按钮
-                        cell5.innerHTML = `
+                        cell6.innerHTML = `
                             <div class="action-buttons">
                                 <button class="btn btn-info" onclick="viewEmailBody(${email.id})">查看正文</button>
                                 <button class="btn btn-danger" onclick="deleteEmail(${email.id})">删除</button>
@@ -721,58 +818,10 @@
                 });
         }
         
-        // 同步到投递汇总系统
-        function syncToDeliverySystem(emailData) {
-            // 从邮件主题和发件人中提取企业名称
-            const companyName = extractCompanyName(emailData.sender, emailData.subject);
-            
-            // 默认投递状态
-            let status = '已投递';
-            
-            // 创建投递记录数据
-            const deliveryData = {
-                company_name: companyName,
-                delivery_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-                status: status
-            };
-            
-            // 发送到投递汇总系统API
-            fetch(`${API_BASE}/deliveries`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(deliveryData)
-            })
-            .then(response => {
-                // 检查响应状态
-                if (response.status === 503) {
-                    // 数据库未初始化，重定向到配置页面
-                    window.location.href = '/config';
-                    return;
-                }
-                
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    return response.json().then(err => { throw err; });
-                }
-            })
-            .then(result => {
-                // 检查是否有结果返回
-                if (!result) return;
-                
-                showMessage(`已添加到投递汇总系统: ${companyName}`, 'success');
-            })
-            .catch(error => {
-                console.error('添加到投递汇总系统失败:', error);
-                // 检查是否是重复记录错误
-                if (error.error && error.error.includes('Duplicate')) {
-                    showMessage(`该记录已存在于投递汇总系统中: ${companyName}`, 'error');
-                } else {
-                    showMessage(`添加失败: ${error.error || '未知错误'}`, 'error');
-                }
-            });
+        // 同步到投递汇总系统（已修改为弹窗形式）
+        function syncToDeliverySystem(emailData, emailModal) {
+            // 显示投递表单弹窗
+            showDeliveryForm(emailData, emailModal);
         }
         
         // 从发件人和主题中提取企业名称
@@ -997,6 +1046,30 @@
                 if (!result) return;
                 
                 showMessage(`添加成功: ${companyName} 已添加到投递汇总系统`, 'success');
+                
+                // 更新邮件的投递状态
+                if (emailData && emailData.id) {
+                    fetch(`${API_BASE}/emails/${emailData.id}/delivered`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ delivered: true })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error('更新邮件投递状态失败');
+                        }
+                        // 重新加载数据以显示更新后的状态
+                        loadData();
+                    })
+                    .catch(error => {
+                        console.error('更新邮件投递状态失败:', error);
+                        // 即使更新状态失败，仍然继续关闭弹窗
+                        loadData();
+                    });
+                }
+                
                 // 关闭表单弹窗
                 document.body.removeChild(formModal);
                 // 关闭邮件正文弹窗
@@ -1062,7 +1135,7 @@
                     syncBtn.className = 'btn btn-warning';
                     syncBtn.textContent = '添加到投递汇总';
                     syncBtn.onclick = function() {
-                        showDeliveryForm(emailData, modal);
+                        syncToDeliverySystem(emailData, modal);
                     };
                     
                     actionDiv.appendChild(syncBtn);
@@ -1164,6 +1237,45 @@
             selectAllCheckbox.checked = newCheckedState;
         }
         
+        // 删除单个邮件
+        function deleteEmail(id) {
+            if (confirm('确定要删除这封邮件吗？')) {
+                // 显示正在删除的消息
+                showMessage('正在删除邮件...', 'loading');
+                
+                // 发送删除请求
+                fetch(`${API_BASE}/emails/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    // 检查响应状态
+                    if (response.status === 503) {
+                        // 数据库未初始化，重定向到配置页面
+                        window.location.href = '/config';
+                        return;
+                    }
+                    
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                })
+                .then(result => {
+                    // 检查是否有结果返回
+                    if (!result) return;
+                    
+                    showMessage('邮件删除成功！', 'success');
+                    // 重新加载数据
+                    loadData();
+                })
+                .catch(error => {
+                    console.error('删除邮件失败:', error);
+                    showMessage(`删除邮件失败: ${error.message}`, 'error');
+                });
+            }
+        }
+        
         // 批量删除邮件
         function bulkDeleteEmails() {
             const selectedCheckboxes = document.querySelectorAll('.select-checkbox:checked');
@@ -1221,42 +1333,88 @@
             }
         }
         
-        // 删除邮件
-        function deleteEmail(id) {
-            if (confirm('确定要删除这封邮件吗？')) {
-                // 显示正在删除的消息
-                showMessage('正在删除邮件...', 'loading');
+        // 切换邮件投递状态
+        function toggleDeliveryStatus(emailId, newStatus, rowElement) {
+            // 显示正在更新的消息
+            showMessage(`${newStatus ? '标记为已投递' : '标记为未投递'}...`, 'loading');
+            
+            // 发送到后端API更新状态
+            fetch(`${API_BASE}/emails/${emailId}/delivered`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ delivered: newStatus })
+            })
+            .then(response => {
+                // 检查响应状态
+                if (response.status === 503) {
+                    // 数据库未初始化，重定向到配置页面
+                    window.location.href = '/config';
+                    return;
+                }
                 
-                fetch(`${API_BASE}/emails/${id}`, {
-                    method: 'DELETE'
-                })
-                .then(response => {
-                    // 检查响应状态
-                    if (response.status === 503) {
-                        // 数据库未初始化，重定向到配置页面
-                        window.location.href = '/config';
-                        return;
-                    }
-                    
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                })
-                .then(result => {
-                    // 检查是否有结果返回
-                    if (!result) return;
-                    
-                    showMessage('邮件删除成功！', 'success');
-                    // 重新加载数据
-                    loadData();
-                })
-                .catch(error => {
-                    console.error('删除邮件失败:', error);
-                    showMessage(`删除邮件失败: ${error.message}`, 'error');
-                });
-            }
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            })
+            .then(result => {
+                // 检查是否有结果返回
+                if (!result) return;
+                
+                showMessage(`${newStatus ? '已标记为已投递' : '已标记为未投递'}`, 'success');
+                
+                // 重新加载数据以显示更新后的状态
+                loadData();
+            })
+            .catch(error => {
+                console.error('更新邮件投递状态失败:', error);
+                showMessage(`更新失败: ${error.message}`, 'error');
+            });
+        }
+        
+        // 切换邮件投递状态
+        function toggleDeliveryStatus(emailId, newStatus, rowElement) {
+            // 显示正在更新的消息
+            showMessage(`${newStatus ? '标记为已投递' : '标记为未投递'}...`, 'loading');
+            
+            // 发送到后端API更新状态
+            fetch(`${API_BASE}/emails/${emailId}/delivered`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ delivered: newStatus })
+            })
+            .then(response => {
+                // 检查响应状态
+                if (response.status === 503) {
+                    // 数据库未初始化，重定向到配置页面
+                    window.location.href = '/config';
+                    return;
+                }
+                
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+            })
+            .then(result => {
+                // 检查是否有结果返回
+                if (!result) return;
+                
+                showMessage(`${newStatus ? '已标记为已投递' : '已标记为未投递'}`, 'success');
+                
+                // 重新加载数据以显示更新后的状态
+                loadData();
+            })
+            .catch(error => {
+                console.error('更新邮件投递状态失败:', error);
+                showMessage(`更新失败: ${error.message}`, 'error');
+            });
         }
         
         // 邮件排序功能

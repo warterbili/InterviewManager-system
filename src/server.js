@@ -122,6 +122,7 @@ async function initDatabase() {
         datetime DATETIME,
         preparation BOOLEAN DEFAULT FALSE,
         completion BOOLEAN DEFAULT FALSE,
+        notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -136,6 +137,7 @@ async function initDatabase() {
         recipient TEXT,
         send_date TEXT,
         body LONGTEXT,
+        delivered BOOLEAN DEFAULT FALSE,
         UNIQUE KEY unique_email (imap_id, subject(50), sender(50), send_date(50))
       )
     `);
@@ -147,6 +149,7 @@ async function initDatabase() {
         company_name VARCHAR(255) NOT NULL,
         delivery_date DATETIME NOT NULL,
         status VARCHAR(100) NOT NULL,
+        notes TEXT,
         UNIQUE KEY unique_delivery (company_name, delivery_date, status)
       )
     `);
@@ -211,7 +214,8 @@ app.get('/api/interviews', async (req, res) => {
             position: row.position,
             datetime: row.datetime ? row.datetime.toISOString().slice(0, 16) : null,
             preparation: row.preparation,
-            completion: row.completion
+            completion: row.completion,
+            notes: row.notes || ''
         }));
         res.json(data);
         logMessage(`成功返回 ${data.length} 条面试数据`);
@@ -224,11 +228,15 @@ app.get('/api/interviews', async (req, res) => {
 app.post('/api/interviews', async (req, res) => {
     try {
         if (!interviewDb) {
+            logMessage('数据库未初始化', 'WARN');
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
         const data = req.body;
+        logMessage(`收到保存面试数据请求，共 ${data.length} 条记录`);
+        
         await interviewDb.query('DELETE FROM interviews');
+        logMessage('已清空面试数据表');
     
         if (data.length > 0) {
             const values = data.map(item => [
@@ -236,14 +244,17 @@ app.post('/api/interviews', async (req, res) => {
                 item.position,
                 item.datetime ? new Date(item.datetime) : null,
                 item.preparation,
-                item.completion
+                item.completion,
+                item.notes || ''
             ]);
-            await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion) VALUES ?', [values]);
+            await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES ?', [values]);
+            logMessage(`成功插入 ${data.length} 条面试记录`);
         }
     
         res.json({ message: '面试数据保存成功' });
+        logMessage(`面试数据保存完成，共处理 ${data.length} 条记录`);
     } catch (err) {
-        // console.error('保存面试数据失败:', err);
+        logMessage(`保存面试数据失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '保存面试数据失败' });
     }
 });
@@ -251,21 +262,26 @@ app.post('/api/interviews', async (req, res) => {
 // 邮件相关API
 app.get('/api/emails', async (req, res) => {
     try {
+        logMessage('收到获取邮件数据请求');
         if (!emailDb) {
+            logMessage('数据库未初始化', 'WARN');
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
-        const [rows] = await emailDb.query('SELECT * FROM all_emails ORDER BY send_date DESC');
+        const [rows] = await emailDb.query('SELECT *, delivered as is_delivered FROM all_emails ORDER BY send_date DESC');
+        logMessage(`成功返回 ${rows.length} 条邮件数据`);
         res.json(rows);
     } catch (err) {
-        // console.error('获取邮件数据失败:', err);
+        logMessage(`获取邮件数据失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '获取邮件数据失败' });
     }
 });
 
 app.get('/api/emails/search', async (req, res) => {
     try {
+        logMessage('收到搜索邮件数据请求');
         if (!emailDb) {
+            logMessage('数据库未初始化', 'WARN');
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
@@ -273,41 +289,83 @@ app.get('/api/emails/search', async (req, res) => {
         let rows;
     
         if (!keyword) {
-            [rows] = await emailDb.query('SELECT * FROM all_emails ORDER BY send_date DESC');
+            [rows] = await emailDb.query('SELECT *, delivered as is_delivered FROM all_emails ORDER BY send_date DESC');
+            logMessage(`返回所有邮件数据，共 ${rows.length} 条记录`);
         } else {
             [rows] = await emailDb.query(
-                'SELECT * FROM all_emails WHERE subject LIKE ? OR body LIKE ? ORDER BY send_date DESC',
+                'SELECT *, delivered as is_delivered FROM all_emails WHERE subject LIKE ? OR body LIKE ? ORDER BY send_date DESC',
                 [`%${keyword}%`, `%${keyword}%`]
             );
+            logMessage(`搜索关键词 "${keyword}"，返回 ${rows.length} 条匹配记录`);
         }
     
         res.json(rows);
     } catch (err) {
-        // console.error('搜索邮件数据失败:', err);
+        logMessage(`搜索邮件数据失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '搜索邮件数据失败' });
     }
 });
 
 app.delete('/api/emails/:id', async (req, res) => {
     try {
+        logMessage(`收到删除邮件请求，邮件ID: ${req.params.id}`);
         if (!emailDb) {
+            logMessage('数据库未初始化', 'WARN');
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
         const { id } = req.params;
         if (!/^[0-9]+$/.test(id)) {
+            logMessage(`无效的邮件ID: ${id}`, 'WARN');
             return res.status(400).json({ error: '无效的邮件ID' });
         }
     
         const [result] = await emailDb.query('DELETE FROM all_emails WHERE id = ?', [id]);
         if (result.affectedRows === 0) {
+            logMessage(`删除邮件失败，邮件未找到，ID: ${id}`, 'WARN');
             return res.status(404).json({ error: '邮件未找到' });
         }
     
         res.json({ message: '邮件删除成功' });
+        logMessage(`邮件删除成功，ID: ${id}`);
     } catch (err) {
-        // console.error('删除邮件失败:', err);
+        logMessage(`删除邮件失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '删除邮件失败' });
+    }
+});
+
+// 更新邮件投递状态
+app.put('/api/emails/:id/delivered', async (req, res) => {
+    try {
+        logMessage(`收到更新邮件投递状态请求，邮件ID: ${req.params.id}`);
+        if (!emailDb) {
+            logMessage('数据库未初始化', 'WARN');
+            return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
+        }
+    
+        const { id } = req.params;
+        const { delivered } = req.body;
+    
+        if (!/^[0-9]+$/.test(id)) {
+            logMessage(`无效的邮件ID: ${id}`, 'WARN');
+            return res.status(400).json({ error: '无效的邮件ID' });
+        }
+    
+        const [result] = await emailDb.query(
+            'UPDATE all_emails SET delivered = ? WHERE id = ?',
+            [delivered ? 1 : 0, id]
+        );
+    
+        if (result.affectedRows === 0) {
+            logMessage(`更新邮件投递状态失败，邮件未找到，ID: ${id}`, 'WARN');
+            return res.status(404).json({ error: '邮件未找到' });
+        }
+    
+        res.json({ message: '邮件投递状态更新成功' });
+        logMessage(`邮件投递状态更新成功，ID: ${id}，状态: ${delivered ? '已投递' : '未投递'}`);
+    } catch (err) {
+        logMessage(`更新邮件投递状态失败: ${err.message}`, 'ERROR');
+        res.status(500).json({ error: '更新邮件投递状态失败' });
     }
 });
 
@@ -404,7 +462,8 @@ app.post('/api/fetch-emails', async (req, res) => {
         }
     
         const pythonProcess = spawn(pythonPath, args, {
-            cwd: __dirname
+            cwd: __dirname,
+            env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
         });
     
         let stdoutData = '';
@@ -452,43 +511,63 @@ app.post('/api/fetch-emails', async (req, res) => {
             }
       
             if (code === 0) {
+                let processedCount = 0;
                 let insertedCount = 0;
+                let message = '';
                 logMessage('邮件获取脚本执行完成');
+                logMessage(`[DEBUG] Python脚本输出原始数据: ${stdoutData}`);
                 
-                // 尝试匹配"成功插入 X 封邮件"格式（中文）
-                const insertedMatch = stdoutData.match(/成功插入\s+(\d+)\s+封邮件/);
-                if (insertedMatch) {
-                    insertedCount = parseInt(insertedMatch[1]);
-                }
-                
-                // 尝试匹配"没有获取到任何邮件"格式（中文）
-                if (insertedCount === 0) {
-                    const noEmailsMatch = stdoutData.match(/没有获取到任何邮件/);
-                    if (noEmailsMatch) {
-                        insertedCount = 0;
+                // 尝试匹配"总共处理 X 封邮件，新增 Y 封邮件"格式（中文）
+                const countMatch = stdoutData.match(/总共处理\s+(\d+)\s+封邮件，新增\s+(\d+)\s+封邮件/);
+                logMessage(`[DEBUG] 计数匹配结果: ${countMatch}`);
+                if (countMatch) {
+                    processedCount = parseInt(countMatch[1]);
+                    insertedCount = parseInt(countMatch[2]);
+                    logMessage(`[DEBUG] 解析得到处理邮件数: ${processedCount}, 新增邮件数: ${insertedCount}`);
+                } else {
+                    // 尝试匹配可能的其他格式
+                    const alternativeMatch = stdoutData.match(/获取到\s+(\d+)\s+封新邮件/);
+                    logMessage(`[DEBUG] 替代匹配结果: ${alternativeMatch}`);
+                    if (alternativeMatch) {
+                        insertedCount = parseInt(alternativeMatch[1]);
+                        processedCount = insertedCount;
+                        logMessage(`[DEBUG] 通过替代方式解析得到邮件数: ${processedCount}`);
+                    } else {
+                        // 尝试匹配"没有获取到任何邮件"格式（中文）
+                        const noEmailsMatch = stdoutData.match(/没有获取到任何邮件/);
+                        logMessage(`[DEBUG] 无邮件匹配结果: ${noEmailsMatch}`);
+                        if (noEmailsMatch) {
+                            processedCount = 0;
+                            insertedCount = 0;
+                            logMessage(`[DEBUG] 没有获取到任何邮件`);
+                        } else {
+                            // 如果所有匹配都失败，尝试从stdoutData中查找数字
+                            const numberMatches = stdoutData.match(/(\d+)/g);
+                            logMessage(`[DEBUG] 数字匹配结果: ${numberMatches}`);
+                            if (numberMatches && numberMatches.length > 0) {
+                                // 取最后一个数字作为邮件数量
+                                insertedCount = parseInt(numberMatches[numberMatches.length - 1]);
+                                processedCount = insertedCount;
+                                logMessage(`[DEBUG] 通过数字查找方式解析得到邮件数: ${processedCount}`);
+                            }
+                        }
                     }
                 }
                 
-                // 尝试匹配数字格式（从任何包含数字的行中提取）
-                if (insertedCount === 0) {
-                    const numberMatch = stdoutData.match(/(\d+)/);
-                    if (numberMatch) {
-                        insertedCount = parseInt(numberMatch[1]);
-                    }
-                }
-                
-                // 尝试匹配脚本执行完成的返回值
-                const scriptCompleteMatch = stdoutData.match(/脚本执行完成，返回值:\s+(\d+)/);
-                if (scriptCompleteMatch) {
-                    insertedCount = parseInt(scriptCompleteMatch[1]);
-                }
-                
-                logMessage(`邮件获取完成，新增 ${insertedCount} 封邮件`);
+                logMessage(`邮件获取完成，处理 ${processedCount} 封邮件，新增 ${insertedCount} 封邮件`);
         
+                // 构建消息
+                if (processedCount === 0) {
+                    message = '邮件获取完成，没有找到新邮件';
+                } else {
+                    message = `邮件获取完成，获取到 ${insertedCount} 封新邮件`;
+                }
+        
+                logMessage(`[DEBUG] 返回给前端的数据: processedCount=${insertedCount}, message=${message}`);
                 res.json({ 
                     success: true, 
-                    message: `邮件获取完成，新增 ${insertedCount} 封邮件`, 
-                    insertedCount: insertedCount
+                    message: message,
+                    processedCount: insertedCount  // 返回新增邮件数量
                 });
             } else {
                 logMessage(`邮件获取失败或被中断，错误: ${stderrData}`, 'ERROR');
@@ -523,7 +602,14 @@ app.get('/api/deliveries', async (req, res) => {
         }
     
         const [rows] = await deliveryDb.query('SELECT * FROM deliveries ORDER BY delivery_date DESC');
-        res.json(rows);
+        const data = rows.map(row => ({
+            id: row.id,
+            company_name: row.company_name,
+            delivery_date: row.delivery_date,
+            status: row.status,
+            notes: row.notes || ''
+        }));
+        res.json(data);
     } catch (err) {
         // console.error('获取投递数据失败:', err);
         res.status(500).json({ error: '获取投递数据失败' });
@@ -537,10 +623,13 @@ app.post('/api/deliveries', async (req, res) => {
         }
     
         const { company_name, delivery_date, status } = req.body;
+    
+        // 检查必填字段
         if (!company_name || !delivery_date || !status) {
-            return res.status(400).json({ error: '缺少必要字段' });
+            return res.status(400).json({ error: '公司名称、投递日期和状态是必填字段' });
         }
     
+        // 插入数据
         const [result] = await deliveryDb.query(
             'INSERT INTO deliveries (company_name, delivery_date, status) VALUES (?, ?, ?)',
             [company_name, delivery_date, status]
@@ -548,10 +637,11 @@ app.post('/api/deliveries', async (req, res) => {
     
         res.json({ message: '投递记录添加成功', id: result.insertId });
     } catch (err) {
-        // console.error('添加投递记录失败:', err);
+        // 检查是否是重复记录错误
         if (err.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ error: '重复的投递记录' });
+            return res.status(409).json({ error: '重复记录：该投递记录已存在' });
         }
+        // console.error('添加投递记录失败:', err);
         res.status(500).json({ error: '添加投递记录失败' });
     }
 });
@@ -563,7 +653,7 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
     
         const { id } = req.params;
-        const { company_name, delivery_date, status } = req.body;
+        const { company_name, delivery_date, status, notes } = req.body;
     
         if (!/^[0-9]+$/.test(id)) {
             return res.status(400).json({ error: '无效的投递ID' });
@@ -574,8 +664,8 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
     
         const [result] = await deliveryDb.query(
-            'UPDATE deliveries SET company_name = ?, delivery_date = ?, status = ? WHERE id = ?',
-            [company_name, delivery_date, status, id]
+            'UPDATE deliveries SET company_name = ?, delivery_date = ?, status = ?, notes = ? WHERE id = ?',
+            [company_name, delivery_date, status, notes || '', id]
         );
     
         if (result.affectedRows === 0) {
@@ -590,7 +680,7 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
         res.status(500).json({ error: '更新投递记录失败' });
     }
-});
+});;
 
 app.delete('/api/deliveries/:id', async (req, res) => {
     try {

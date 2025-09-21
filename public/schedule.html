@@ -75,6 +75,96 @@
             background-color: var(--warning-color);
         }
 
+        /* 邮件弹窗样式 */
+        .modal {
+            display: block;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 2rem auto;
+            padding: 0;
+            border: none;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+        }
+
+        .modal-title-bar {
+            margin: 0;
+            padding: 1rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: move;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: calc(80vh - 100px);
+            overflow-y: auto;
+        }
+
+        #notesTextarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 150px;
+            box-sizing: border-box;
+        }
+
+        #notesTextarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+
+        .modal-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--gray-300);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
         @media (max-width: 768px) {
             .filters {
                 flex-direction: column;
@@ -138,6 +228,7 @@
                                 <th>面试时间</th>
                                 <th>准备状态</th>
                                 <th>完成情况</th>
+                                <th>备注</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -147,6 +238,23 @@
                     </table>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- 备注弹窗 -->
+    <div id="notesModal" class="modal" style="display: none;">
+        <div class="modal-content" id="notesModalContent">
+            <div class="modal-title-bar" id="notesModalTitleBar">
+                <h2>添加/编辑备注</h2>
+                <span class="modal-close" onclick="closeNotesModal()">×</span>
+            </div>
+            <div class="modal-body">
+                <textarea id="notesTextarea" placeholder="请输入备注内容..." rows="10"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeNotesModal()">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveNotes()">保存</button>
+            </div>
         </div>
     </div>
 
@@ -255,7 +363,7 @@
                     }
                     
                     data.forEach(item => {
-                        addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion);
+                        addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion, item.notes);
                     });
                     
                     // 获取排序顺序
@@ -277,7 +385,7 @@
         }
 
         // 添加带数据的新行
-        function addRowWithData(company, position, datetime, preparation, completion) {
+        function addRowWithData(company, position, datetime, preparation, completion, notes) {
             const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
             const newRow = table.insertRow();
             
@@ -287,15 +395,19 @@
                 <td><input type="datetime-local" value="${datetime || ''}"></td>
                 <td><input type="checkbox" ${preparation ? 'checked' : ''}></td>
                 <td><input type="checkbox" ${completion ? 'checked' : ''}></td>
+                <td><button type="button" class="btn btn-secondary" onclick="openNotesModal(this)">备注</button></td>
                 <td class="action-buttons">
                     <button type="button" class="btn btn-danger" onclick="deleteRow(this)">删除</button>
                 </td>
             `;
+            
+            // 存储备注内容在行元素上
+            newRow.notes = notes || '';
         }
         
         // 添加空行
         function addRow() {
-            addRowWithData('', '', '', false, false);
+            addRowWithData('', '', '', false, false, '');
             showMessage('已添加新行，请填写面试信息', 'success');
             
             // 获取所有数据行
@@ -331,13 +443,15 @@
                 const datetime = cells[2].getElementsByTagName('input')[0].value;
                 const preparation = cells[3].getElementsByTagName('input')[0].checked;
                 const completion = cells[4].getElementsByTagName('input')[0].checked;
+                const notes = rows[i].notes || '';
                 
                 data.push({
                     company: company,
                     position: position,
                     datetime: datetime,
                     preparation: preparation,
-                    completion: completion
+                    completion: completion,
+                    notes: notes
                 });
             }
             
@@ -388,6 +502,107 @@
                 saveData();
             }
         });
+        
+        // 备注弹窗相关变量
+        let currentRow = null;
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+        
+        // 打开备注弹窗
+        function openNotesModal(button) {
+            currentRow = button.closest('tr');
+            const notes = currentRow.notes || '';
+            document.getElementById('notesTextarea').value = notes;
+            document.getElementById('notesModal').style.display = 'block';
+            
+            // 重置拖动位置
+            xOffset = 0;
+            yOffset = 0;
+            setTranslate(0, 0, document.getElementById('notesModalContent'));
+            
+            // 添加拖动事件监听器
+            const modalTitleBar = document.getElementById('notesModalTitleBar');
+            modalTitleBar.addEventListener('mousedown', dragStart);
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('mousemove', drag);
+        }
+        
+        // 关闭备注弹窗
+        function closeNotesModal() {
+            document.getElementById('notesModal').style.display = 'none';
+            currentRow = null;
+            
+            // 移除拖动事件监听器
+            const modalTitleBar = document.getElementById('notesModalTitleBar');
+            modalTitleBar.removeEventListener('mousedown', dragStart);
+            document.removeEventListener('mouseup', dragEnd);
+            document.removeEventListener('mousemove', drag);
+        }
+        
+        // 保存备注
+        function saveNotes() {
+            if (currentRow) {
+                const notes = document.getElementById('notesTextarea').value;
+                currentRow.notes = notes;
+                showMessage('备注保存成功', 'success');
+            }
+            closeNotesModal();
+        }
+        
+        // 拖动功能相关函数
+        function dragStart(e) {
+            // 防止在文本区域内拖动
+            if (e.target.id === 'notesTextarea') {
+                return;
+            }
+            
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            
+            if (e.target.id === 'notesModalTitleBar') {
+                isDragging = true;
+                document.getElementById('notesModalContent').style.cursor = 'grabbing';
+            }
+        }
+        
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            
+            isDragging = false;
+            document.getElementById('notesModalContent').style.cursor = 'default';
+        }
+        
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                
+                xOffset = currentX;
+                yOffset = currentY;
+                
+                setTranslate(currentX, currentY, document.getElementById('notesModalContent'));
+            }
+        }
+        
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+        }
+        
+        // 点击弹窗外部关闭弹窗
+        window.onclick = function(event) {
+            const modal = document.getElementById('notesModal');
+            if (event.target === modal) {
+                closeNotesModal();
+            }
+        }
+    </script>
     </script>
 </body>
 </html>
