@@ -303,9 +303,6 @@
             }, 3000);
         }
 
-        // 标记数据是否已更改
-        let dataChanged = false;
-
         // 页面加载时从后端API获取数据
         window.onload = function() {
             // 为排序选择器添加事件监听器
@@ -325,14 +322,9 @@
             loadData();
         };
 
-        // 监听页面卸载事件
+        // 监听页面卸载事件，自动保存数据
         window.addEventListener('beforeunload', function(e) {
-            if (dataChanged) {
-                // 显示确认对话框
-                const confirmationMessage = '您有未保存的数据，确定要离开此页面吗？';
-                e.returnValue = confirmationMessage;
-                return confirmationMessage;
-            }
+            saveData();
         });
 
         // 按时间排序表格行
@@ -444,7 +436,7 @@
             ];
             
             // 构建面试状态下拉选项
-            let statusSelect = `<select onchange="markDataChanged()">`;
+            let statusSelect = `<select>`;
             statusOptions.forEach(option => {
                 const selected = preparation === option.value ? 'selected' : '';
                 statusSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
@@ -452,7 +444,7 @@
             statusSelect += `</select>`;
             
             // 构建面试结果下拉选项
-            let resultSelect = `<select onchange="markDataChanged()">`;
+            let resultSelect = `<select>`;
             resultOptions.forEach(option => {
                 const selected = completion === option.value ? 'selected' : '';
                 resultSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
@@ -460,9 +452,9 @@
             resultSelect += `</select>`;
             
             newRow.innerHTML = `
-                <td><input type="text" value="${company || ''}" oninput="markDataChanged()"></td>
-                <td><input type="text" value="${position || ''}" oninput="markDataChanged()"></td>
-                <td><input type="datetime-local" value="${datetime || ''}" oninput="markDataChanged()"></td>
+                <td><input type="text" value="${company || ''}"></td>
+                <td><input type="text" value="${position || ''}"></td>
+                <td><input type="datetime-local" value="${datetime || ''}"></td>
                 <td>${statusSelect}</td>
                 <td>${resultSelect}</td>
                 <td><button type="button" class="btn btn-secondary" onclick="openNotesModal(this)">备注</button></td>
@@ -477,7 +469,7 @@
         
         // 标记数据已更改
         function markDataChanged() {
-            dataChanged = true;
+            // 不再需要标记数据更改，因为会自动保存
         }
         
         // 根据搜索关键词筛选表格
@@ -541,7 +533,6 @@
         // 添加空行
         function addRow() {
             addRowWithData('', '', '', '', '', '');
-            markDataChanged(); // 标记数据已更改
             showMessage('已添加新行，请填写面试信息', 'success');
             
             // 获取所有数据行
@@ -557,9 +548,8 @@
             if (confirm('确定要删除这条面试记录吗？')) {
                 const row = button.closest('tr');
                 row.parentNode.removeChild(row);
-                markDataChanged(); // 标记数据已更改
                 // 显示正在删除的消息
-                showMessage('记录已删除，请点击保存按钮保存更改', 'success');
+                showMessage('记录已删除，页面关闭时将自动保存更改', 'success');
             }
         }
         
@@ -614,9 +604,6 @@
             .then(result => {
                 // 检查是否有结果返回
                 if (!result) return;
-                
-                // 保存成功后重置数据更改标记
-                dataChanged = false;
                 
                 // 重新加载数据以确保一致性
                 loadData();
@@ -675,8 +662,7 @@
             if (currentRow) {
                 const notes = document.getElementById('notesTextarea').value;
                 currentRow.notes = notes;
-                markDataChanged(); // 标记数据已更改
-                showMessage('备注已更新，请点击保存按钮保存更改', 'success');
+                showMessage('备注已更新，页面关闭时将自动保存更改', 'success');
             }
             closeNotesModal();
         }
