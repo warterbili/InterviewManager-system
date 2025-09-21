@@ -303,6 +303,9 @@
             }, 3000);
         }
 
+        // 标记数据是否已更改
+        let dataChanged = false;
+
         // 页面加载时从后端API获取数据
         window.onload = function() {
             // 为排序选择器添加事件监听器
@@ -321,6 +324,16 @@
             
             loadData();
         };
+
+        // 监听页面卸载事件
+        window.addEventListener('beforeunload', function(e) {
+            if (dataChanged) {
+                // 显示确认对话框
+                const confirmationMessage = '您有未保存的数据，确定要离开此页面吗？';
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
 
         // 按时间排序表格行
         function sortTableRows(rows) {
@@ -382,12 +395,8 @@
                     
                     data.forEach(item => {
                         // 兼容旧数据格式
-                        const preparation = item.preparation === true ? '一面' : 
-                                          item.preparation === false ? '' : 
-                                          item.preparation || '';
-                        const completion = item.completion === true ? '' : 
-                                         item.completion === false ? '' : 
-                                         item.completion || '';
+                        const preparation = item.preparation || '';
+                        const completion = item.completion || '';
                         
                         addRowWithData(item.company, item.position, item.datetime, preparation, completion, item.notes);
                     });
@@ -417,6 +426,7 @@
             
             // 面试状态选项
             const statusOptions = [
+                { value: '', text: '请选择' },
                 { value: '一面', text: '一面' },
                 { value: '二面', text: '二面' },
                 { value: '三面', text: '三面' },
@@ -428,12 +438,13 @@
             // 面试结果选项
             const resultOptions = [
                 { value: '', text: '请选择' },
+                { value: '等待面试', text: '等待面试' },
                 { value: '已过', text: '已过' },
                 { value: '已挂', text: '已挂' }
             ];
             
             // 构建面试状态下拉选项
-            let statusSelect = `<select>`;
+            let statusSelect = `<select onchange="markDataChanged()">`;
             statusOptions.forEach(option => {
                 const selected = preparation === option.value ? 'selected' : '';
                 statusSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
@@ -441,7 +452,7 @@
             statusSelect += `</select>`;
             
             // 构建面试结果下拉选项
-            let resultSelect = `<select>`;
+            let resultSelect = `<select onchange="markDataChanged()">`;
             resultOptions.forEach(option => {
                 const selected = completion === option.value ? 'selected' : '';
                 resultSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
@@ -449,9 +460,9 @@
             resultSelect += `</select>`;
             
             newRow.innerHTML = `
-                <td><input type="text" value="${company || ''}"></td>
-                <td><input type="text" value="${position || ''}"></td>
-                <td><input type="datetime-local" value="${datetime || ''}"></td>
+                <td><input type="text" value="${company || ''}" oninput="markDataChanged()"></td>
+                <td><input type="text" value="${position || ''}" oninput="markDataChanged()"></td>
+                <td><input type="datetime-local" value="${datetime || ''}" oninput="markDataChanged()"></td>
                 <td>${statusSelect}</td>
                 <td>${resultSelect}</td>
                 <td><button type="button" class="btn btn-secondary" onclick="openNotesModal(this)">备注</button></td>
@@ -462,6 +473,11 @@
             
             // 存储备注内容在行元素上
             newRow.notes = notes || '';
+        }
+        
+        // 标记数据已更改
+        function markDataChanged() {
+            dataChanged = true;
         }
         
         // 根据搜索关键词筛选表格
@@ -524,7 +540,8 @@
         
         // 添加空行
         function addRow() {
-            addRowWithData('', '', '', false, false, '');
+            addRowWithData('', '', '', '', '', '');
+            markDataChanged(); // 标记数据已更改
             showMessage('已添加新行，请填写面试信息', 'success');
             
             // 获取所有数据行
@@ -540,10 +557,9 @@
             if (confirm('确定要删除这条面试记录吗？')) {
                 const row = button.closest('tr');
                 row.parentNode.removeChild(row);
+                markDataChanged(); // 标记数据已更改
                 // 显示正在删除的消息
-                showMessage('正在删除记录...', 'loading');
-                // 自动保存更改
-                saveData();
+                showMessage('记录已删除，请点击保存按钮保存更改', 'success');
             }
         }
         
@@ -562,14 +578,17 @@
                 const completion = cells[4].getElementsByTagName('select')[0].value;
                 const notes = rows[i].notes || '';
                 
-                data.push({
-                    company: company,
-                    position: position,
-                    datetime: datetime,
-                    preparation: preparation,
-                    completion: completion,
-                    notes: notes
-                });
+                // 只保存非空行
+                if (company || position || datetime || preparation || completion) {
+                    data.push({
+                        company: company,
+                        position: position,
+                        datetime: datetime,
+                        preparation: preparation,
+                        completion: completion,
+                        notes: notes
+                    });
+                }
             }
             
             // 显示正在保存的消息
@@ -596,6 +615,12 @@
                 // 检查是否有结果返回
                 if (!result) return;
                 
+                // 保存成功后重置数据更改标记
+                dataChanged = false;
+                
+                // 重新加载数据以确保一致性
+                loadData();
+                
                 showMessage(`数据保存成功！共保存 ${data.length} 条记录`, 'success');
             })
             .catch(error => {
@@ -603,22 +628,6 @@
                 showMessage('保存数据失败: ' + error.message, 'error');
             });
         }
-        
-        // 监听输入变化并自动保存
-        document.addEventListener('input', function(e) {
-            if (e.target.tagName === 'INPUT') {
-                // 延迟保存，避免过于频繁
-                clearTimeout(window.saveTimeout);
-                window.saveTimeout = setTimeout(saveData, 1000);
-            }
-        });
-        
-        // 监听复选框变化并自动保存
-        document.addEventListener('change', function(e) {
-            if (e.target.type === 'checkbox') {
-                saveData();
-            }
-        });
         
         // 备注弹窗相关变量
         let currentRow = null;
@@ -666,7 +675,8 @@
             if (currentRow) {
                 const notes = document.getElementById('notesTextarea').value;
                 currentRow.notes = notes;
-                showMessage('备注保存成功', 'success');
+                markDataChanged(); // 标记数据已更改
+                showMessage('备注已更新，请点击保存按钮保存更改', 'success');
             }
             closeNotesModal();
         }
@@ -773,7 +783,6 @@
             
             showMessage('CSV文件导出成功', 'success');
         }
-    </script>
     </script>
 </body>
 </html>

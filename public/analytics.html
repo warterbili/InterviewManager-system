@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据可视化分析 - 面试管理系统</title>
+    <link rel="stylesheet" href="./common.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .header h1 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--gray-300);
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            background-color: var(--gray-200);
+            border: 1px solid var(--gray-300);
+            border-bottom: none;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            margin-right: 0.5rem;
+        }
+
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            z-index: 1;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--box-shadow-sm);
+        }
+
+        .chart-container h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 0.5rem;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .calendar-view {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 1rem;
+        }
+
+        .calendar-header {
+            text-align: center;
+            font-weight: bold;
+            padding: 10px 0;
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .calendar-day {
+            min-height: 100px;
+            max-height: 150px;
+            border: 1px solid var(--gray-200);
+            padding: 5px;
+            background-color: var(--gray-100);
+            overflow-y: auto;
+            cursor: pointer;
+        }
+
+        .calendar-day.has-interview {
+            background-color: #e6f7e6;
+            border-color: var(--success-color);
+        }
+
+        .calendar-day-number {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .interview-item {
+            font-size: 0.75rem;
+            margin-bottom: 2px;
+            padding: 2px 4px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .interview-count {
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .calendar-controls {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .calendar-controls button {
+            margin: 0 0.5rem;
+            padding: 0.5rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        
+        .calendar-controls button:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .calendar-controls #calendarTitle {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-style: italic;
+            color: var(--gray-600);
+        }
+
+        .error {
+            text-align: center;
+            padding: 2rem;
+            color: var(--danger-color);
+        }
+
+        /* 面试详情弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 2rem auto;
+            padding: 0;
+            border: none;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+        }
+
+        .modal-title-bar {
+            margin: 0;
+            padding: 1rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            cursor: move;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: calc(80vh - 100px);
+            overflow-y: auto;
+        }
+
+        .interview-detail-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .interview-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .interview-time {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .interview-company {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .interview-position {
+            color: var(--gray-600);
+            margin-bottom: 0.25rem;
+        }
+
+        .interview-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--border-radius);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        .status-preparation {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .status-completion {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .interview-notes {
+            font-size: 0.9rem;
+            color: var(--gray-700);
+            margin-top: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+                border-radius: var(--border-radius);
+            }
+            
+            .chart-wrapper {
+                height: 300px;
+            }
+            
+            .calendar-view {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>数据可视化分析</h1>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/" class="back-btn">
+                ← 返回主页
+            </a>
+        </div>
+        
+        <div id="message"></div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="interviews">面试日程分析</div>
+            <div class="tab" data-tab="deliveries">企业投递分析</div>
+        </div>
+        
+        <!-- 面试日程分析 -->
+        <div id="interviews" class="tab-content active">
+            <div class="chart-container">
+                <h2>面试时间分布</h2>
+                <div class="chart-wrapper">
+                    <canvas id="interviewTimeChart"></canvas>
+                </div>
+            </div>
+            
+            
+            
+            <div class="chart-container">
+                <h2>面试结果统计</h2>
+                <div class="chart-wrapper">
+                    <canvas id="interviewResultChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>面试轮次与结果关联分析</h2>
+                <div class="chart-wrapper">
+                    <canvas id="interviewRoundResultChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>面试轮次分布</h2>
+                <div class="chart-wrapper">
+                    <canvas id="interviewRoundChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>面试与投递关联分析</h2>
+                <div class="chart-wrapper">
+                    <canvas id="interviewDeliveryCorrelationChart"></canvas>
+                </div>
+            </div>
+            
+            
+            
+            <div class="chart-container">
+                <h2>面试成功率趋势图</h2>
+                <div class="chart-wrapper">
+                    <canvas id="interviewSuccessTrendChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>面试日历视图</h2>
+                <div class="calendar-controls">
+                    <button id="prevYear">« 前一年</button>
+                    <button id="prevMonth">< 上个月</button>
+                    <span id="calendarTitle">2025年9月</span>
+                    <button id="nextMonth">下个月 ></button>
+                    <button id="nextYear">后一年 »</button>
+                </div>
+                <div id="interviewCalendar">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 企业投递分析 -->
+        <div id="deliveries" class="tab-content">
+            <div class="chart-container">
+                <h2>投递状态分布</h2>
+                <div class="chart-wrapper">
+                    <canvas id="deliveryStatusChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>投递时间趋势</h2>
+                <div class="chart-wrapper">
+                    <canvas id="deliveryTrendChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>岗位类型分布</h2>
+                <div class="chart-wrapper">
+                    <canvas id="positionTypeChart"></canvas>
+                </div>
+            </div>
+            
+            
+            
+            
+        </div>
+    </div>
+
+    <script>
+        // 检查配置，如果没有则重定向到配置页面
+        // 从服务器获取配置
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                // 检查是否至少有一些基本的数据库配置
+                const hasBasicDbConfig = config.db.host || config.db.user || config.db.password;
+                
+                // 如果没有任何基本数据库配置，重定向到配置页面，并传递当前页面作为返回URL
+                if (!hasBasicDbConfig) {
+                    const currentUrl = encodeURIComponent(window.location.pathname);
+                    window.location.href = `/config?returnUrl=${currentUrl}`;
+                }
+            })
+            .catch(error => {
+                console.error('获取配置失败:', error);
+                // 如果获取配置失败，也重定向到配置页面，并传递当前页面作为返回URL
+                const currentUrl = encodeURIComponent(window.location.pathname);
+                window.location.href = `/config?returnUrl=${currentUrl}`;
+            });
+
+        // API基础URL
+        const API_BASE = '/api';
+        
+        // 显示消息函数
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = 'message ' + type + ' show';
+            
+            // 5秒后自动清除消息
+            setTimeout(() => {
+                messageEl.textContent = '';
+                messageEl.className = '';
+            }, 5000);
+        }
+
+        // 标签页切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // 移除所有活动状态
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // 激活当前标签页
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+                
+                // 如果是第一次激活，则加载数据
+                if (!tab.dataset.loaded) {
+                    if (tabId === 'interviews') {
+                        loadInterviewData();
+                    } else if (tabId === 'deliveries') {
+                        loadDeliveryData();
+                    }
+                    tab.dataset.loaded = 'true';
+                }
+            });
+        });
+
+        // 图表实例
+        let interviewTimeChart, interviewResultChart, interviewRoundChart;
+        let deliveryStatusChart, deliveryTrendChart;
+        let interviewDeliveryCorrelationChart, positionTypeChart;
+        let interviewRoundResultChart, interviewSuccessTrendChart;
+
+        // 加载面试数据并渲染图表
+        function loadInterviewData() {
+            // 显示加载状态
+            showMessage('正在加载面试数据...', 'loading');
+            
+            fetch(`${API_BASE}/interviews`)
+                .then(response => {
+                    // 检查响应状态
+                    if (response.status === 503) {
+                        // 数据库未初始化，重定向到配置页面
+                        window.location.href = '/config';
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 检查是否有数据返回
+                    if (!data) return;
+                    
+                    showMessage(`加载完成，共找到 ${data.length} 条面试记录`, 'success');
+                    
+                    // 渲染图表
+                    renderInterviewCharts(data);
+                    
+                    // 渲染日历视图
+                    renderInterviewCalendar(data);
+                    
+                    // 添加点击事件监听器
+                    setTimeout(() => addCalendarClickEvents(data), 100);
+                })
+                .catch(error => {
+                    console.error('加载面试数据失败:', error);
+                    document.getElementById('interviewCalendar').innerHTML = `<div class="error">加载数据失败: ${error.message}</div>`;
+                    showMessage('加载面试数据失败: ' + error.message, 'error');
+                });
+        }
+
+        // 渲染面试图表
+        function renderInterviewCharts(data) {
+            // 面试时间分布（按日期）
+            const timeData = {};
+            data.forEach(item => {
+                if (item.datetime) {
+                    const date = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    timeData[date] = (timeData[date] || 0) + 1;
+                }
+            });
+            
+            // 获取最近30天的数据用于显示
+            const timeDates = Object.keys(timeData).sort();
+            const timeRecentDates = timeDates.slice(-30); // 只取最近30天
+            const timeValues = timeRecentDates.map(date => timeData[date]);
+            
+            if (interviewTimeChart) {
+                interviewTimeChart.destroy();
+            }
+            
+            const timeCtx = document.getElementById('interviewTimeChart').getContext('2d');
+            interviewTimeChart = new Chart(timeCtx, {
+                type: 'line',
+                data: {
+                    labels: timeRecentDates,
+                    datasets: [{
+                        label: '面试数量',
+                        data: timeValues,
+                        borderColor: 'rgba(67, 97, 238, 1)',
+                        backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                callback: function(value) {
+                                    // 只显示日期，不显示年份
+                                    return this.getLabelForValue(value).substring(5);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 面试结果统计
+            const resultData = { '通过': 0, '未通过': 0, '未完成': 0, '未知': 0 };
+            data.forEach(item => {
+                // 通过对应数据的已过状态
+                if (item.completion === '已过') {
+                    resultData['通过']++;
+                // 未通过对应数据的已挂状态
+                } else if (item.completion === '已挂') {
+                    resultData['未通过']++;
+                // 未完成对应等待面试状态
+                } else if (item.completion === '等待面试') {
+                    resultData['未完成']++;
+                // 剩下的所有其他情况都归类为未知
+                } else {
+                    resultData['未知']++;
+                }
+            });
+            
+            const resultLabels = Object.keys(resultData);
+            const resultValues = resultLabels.map(label => resultData[label]);
+            const resultColors = [
+                'rgba(76, 175, 80, 0.7)',   // 绿色 - 通过
+                'rgba(244, 67, 54, 0.7)',   // 红色 - 未通过
+                'rgba(255, 152, 0, 0.7)',   // 橙色 - 未完成
+                'rgba(158, 158, 158, 0.7)'  // 灰色 - 未知
+            ];
+            
+            if (interviewResultChart) {
+                interviewResultChart.destroy();
+            }
+            
+            const resultCtx = document.getElementById('interviewResultChart').getContext('2d');
+            interviewResultChart = new Chart(resultCtx, {
+                type: 'pie',
+                data: {
+                    labels: resultLabels,
+                    datasets: [{
+                        data: resultValues,
+                        backgroundColor: resultColors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // 面试轮次分布
+            const roundData = { '一面': 0, '二面': 0, '三面': 0, '四面': 0, '五面': 0, '六面': 0 };
+            data.forEach(item => {
+                if (item.preparation === '一面') {
+                    roundData['一面']++;
+                } else if (item.preparation === '二面') {
+                    roundData['二面']++;
+                } else if (item.preparation === '三面') {
+                    roundData['三面']++;
+                } else if (item.preparation === '四面') {
+                    roundData['四面']++;
+                } else if (item.preparation === '五面') {
+                    roundData['五面']++;
+                } else if (item.preparation === '六面') {
+                    roundData['六面']++;
+                }
+            });
+            
+            const roundLabels = Object.keys(roundData);
+            const roundValues = roundLabels.map(label => roundData[label]);
+            
+            if (interviewRoundChart) {
+                interviewRoundChart.destroy();
+            }
+            
+            const roundCtx = document.getElementById('interviewRoundChart').getContext('2d');
+            interviewRoundChart = new Chart(roundCtx, {
+                type: 'bar',
+                data: {
+                    labels: roundLabels,
+                    datasets: [{
+                        label: '面试轮次',
+                        data: roundValues,
+                        backgroundColor: 'rgba(156, 39, 176, 0.7)',
+                        borderColor: 'rgba(156, 39, 176, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 面试轮次与结果关联分析
+            const roundResultData = {
+                '一面': { '通过': 0, '未通过': 0, '未完成': 0, '未知': 0 },
+                '二面': { '通过': 0, '未通过': 0, '未完成': 0, '未知': 0 },
+                '三面': { '通过': 0, '未通过': 0, '未完成': 0, '未知': 0 },
+                '四面': { '通过': 0, '未通过': 0, '未完成': 0, '未知': 0 },
+                '五面': { '通过': 0, '未通过': 0, '未完成': 0, '未知': 0 },
+                '六面': { '通过': 0, '未通过': 0, '未完成': 0, '未知': 0 }
+            };
+            
+            data.forEach(item => {
+                const round = item.preparation || '未指定';
+                if (round in roundResultData) {
+                    // 通过对应数据的已过状态
+                    if (item.completion === '已过') {
+                        roundResultData[round]['通过']++;
+                    // 未通过对应数据的已挂状态
+                    } else if (item.completion === '已挂') {
+                        roundResultData[round]['未通过']++;
+                    // 未完成对应等待面试状态
+                    } else if (item.completion === '等待面试') {
+                        roundResultData[round]['未完成']++;
+                    // 剩下的所有其他情况都归类为未知
+                    } else {
+                        roundResultData[round]['未知']++;
+                    }
+                }
+            });
+            
+            const rounds = Object.keys(roundResultData);
+            const passedData = rounds.map(round => roundResultData[round]['通过']);
+            const failedData = rounds.map(round => roundResultData[round]['未通过']);
+            const pendingData = rounds.map(round => roundResultData[round]['未完成']);
+            const unknownData = rounds.map(round => roundResultData[round]['未知']);
+            
+            if (interviewRoundResultChart) {
+                interviewRoundResultChart.destroy();
+            }
+            
+            const roundResultCtx = document.getElementById('interviewRoundResultChart').getContext('2d');
+            interviewRoundResultChart = new Chart(roundResultCtx, {
+                type: 'bar',
+                data: {
+                    labels: rounds,
+                    datasets: [
+                        {
+                            label: '通过',
+                            data: passedData,
+                            backgroundColor: 'rgba(76, 175, 80, 0.7)'
+                        },
+                        {
+                            label: '未通过',
+                            data: failedData,
+                            backgroundColor: 'rgba(244, 67, 54, 0.7)'
+                        },
+                        {
+                            label: '未完成',
+                            data: pendingData,
+                            backgroundColor: 'rgba(255, 152, 0, 0.7)'
+                        },
+                        {
+                            label: '未知',
+                            data: unknownData,
+                            backgroundColor: 'rgba(158, 158, 158, 0.7)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 面试成功率趋势图（按日期）
+            const successTrendData = {};
+            data.forEach(item => {
+                if (item.datetime && item.completion) {
+                    const date = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    if (!successTrendData[date]) {
+                        successTrendData[date] = { total: 0, success: 0 };
+                    }
+                    successTrendData[date].total++;
+                    if (item.completion === '已过') {
+                        successTrendData[date].success++;
+                    }
+                }
+            });
+            
+            // 获取最近30天的数据用于显示
+            const successTrendDates = Object.keys(successTrendData).sort();
+            const successRecentDates = successTrendDates.slice(-30); // 只取最近30天
+            const successTrendValues = successRecentDates.map(date => {
+                const dateData = successTrendData[date];
+                return dateData.total > 0 ? (dateData.success / dateData.total * 100).toFixed(1) : 0;
+            });
+            
+            if (interviewSuccessTrendChart) {
+                interviewSuccessTrendChart.destroy();
+            }
+            
+            const successTrendCtx = document.getElementById('interviewSuccessTrendChart').getContext('2d');
+            interviewSuccessTrendChart = new Chart(successTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: successRecentDates,
+                    datasets: [{
+                        label: '面试成功率 (%)',
+                        data: successTrendValues,
+                        borderColor: 'rgba(76, 175, 80, 1)',
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 面试与投递关联分析
+            // 需要同时获取面试和投递数据进行关联分析
+            fetch(`${API_BASE}/deliveries`)
+                .then(response => response.json())
+                .then(deliveryData => {
+                    // 按日期统计面试和投递数据
+                    const interviewCountByDate = {};
+                    const deliveryCountByDate = {};
+                    
+                    // 统计面试数据
+                    data.forEach(item => {
+                        if (item.datetime) {
+                            const date = item.datetime.substring(0, 10); // YYYY-MM-DD
+                            interviewCountByDate[date] = (interviewCountByDate[date] || 0) + 1;
+                        }
+                    });
+                    
+                    // 统计投递数据
+                    deliveryData.forEach(item => {
+                        if (item.delivery_date) {
+                            const date = item.delivery_date.substring(0, 10); // YYYY-MM-DD
+                            deliveryCountByDate[date] = (deliveryCountByDate[date] || 0) + 1;
+                        }
+                    });
+                    
+                    // 合并日期数据
+                    const allCorrelationDates = new Set([
+                        ...Object.keys(interviewCountByDate),
+                        ...Object.keys(deliveryCountByDate)
+                    ]);
+                    
+                    // 获取最近30天的数据用于显示
+                    const correlationDates = Array.from(allCorrelationDates).sort();
+                    const correlationRecentDates = correlationDates.slice(-30); // 只取最近30天
+                    const interviewCounts = correlationRecentDates.map(date => interviewCountByDate[date] || 0);
+                    const deliveryCounts = correlationRecentDates.map(date => deliveryCountByDate[date] || 0);
+                    
+                    if (interviewDeliveryCorrelationChart) {
+                        interviewDeliveryCorrelationChart.destroy();
+                    }
+                    
+                    const correlationCtx = document.getElementById('interviewDeliveryCorrelationChart').getContext('2d');
+                    interviewDeliveryCorrelationChart = new Chart(correlationCtx, {
+                        type: 'line',
+                        data: {
+                            labels: correlationRecentDates,
+                            datasets: [
+                                {
+                                    label: '面试数量',
+                                    data: interviewCounts,
+                                    borderColor: 'rgba(67, 97, 238, 1)',
+                                    backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                                    fill: true,
+                                    tension: 0.1
+                                },
+                                {
+                                    label: '投递数量',
+                                    data: deliveryCounts,
+                                    borderColor: 'rgba(156, 39, 176, 1)',
+                                    backgroundColor: 'rgba(156, 39, 176, 0.2)',
+                                    fill: true,
+                                    tension: 0.1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        precision: 0
+                                    }
+                                },
+                                x: {
+                                    ticks: {
+                                        maxRotation: 45,
+                                        minRotation: 45,
+                                        callback: function(value) {
+                                            // 只显示日期，不显示年份
+                                            return this.getLabelForValue(value).substring(5);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('获取投递数据失败:', error);
+                });
+            
+            
+        }
+
+        // 当前日历显示的年份和月份
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+
+        // 渲染面试日历视图
+        function renderInterviewCalendar(data) {
+            const calendarEl = document.getElementById('interviewCalendar');
+            
+            // 创建日历标题
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                              '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            
+            document.getElementById('calendarTitle').textContent = `${currentYear}年${monthNames[currentMonth]}`;
+            
+            let calendarHTML = `
+                <div class="calendar-view">
+                    <div class="calendar-header">日</div>
+                    <div class="calendar-header">一</div>
+                    <div class="calendar-header">二</div>
+                    <div class="calendar-header">三</div>
+                    <div class="calendar-header">四</div>
+                    <div class="calendar-header">五</div>
+                    <div class="calendar-header">六</div>
+            `;
+            
+            // 获取月份第一天和最后一天
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            
+            // 获取第一天是星期几 (0=日, 1=一, ..., 6=六)
+            const firstDayOfWeek = firstDay.getDay();
+            
+            // 填充月初的空白天
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                calendarHTML += `<div class="calendar-day"></div>`;
+            }
+            
+            // 填充日期
+            const interviewsByDate = {};
+            data.forEach(item => {
+                if (item.datetime) {
+                    const dateKey = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    if (!interviewsByDate[dateKey]) {
+                        interviewsByDate[dateKey] = [];
+                    }
+                    interviewsByDate[dateKey].push(item);
+                }
+            });
+            
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasInterview = interviewsByDate[dateStr] && interviewsByDate[dateStr].length > 0;
+                const dayClass = hasInterview ? 'calendar-day has-interview' : 'calendar-day';
+                const interviewCount = hasInterview ? interviewsByDate[dateStr].length : 0;
+                
+                // 为有面试的日期添加data属性以便后续识别
+                const dataAttr = hasInterview ? `data-date="${dateStr}" data-has-interview="true"` : '';
+                
+                calendarHTML += `<div class="${dayClass}" ${dataAttr}>`;
+                calendarHTML += `<div class="calendar-day-number">${day}</div>`;
+                
+                if (hasInterview) {
+                    // 只显示前3个面试记录，避免日历格子过于拥挤
+                    const displayInterviews = interviewsByDate[dateStr].slice(0, 3);
+                    displayInterviews.forEach(interview => {
+                        const company = interview.company || '未知公司';
+                        // 获取时间部分
+                        const time = interview.datetime ? interview.datetime.substring(11, 16) : '';
+                        const timeStr = time ? `${time} ` : '';
+                        calendarHTML += `<div class="interview-item" title="${company} ${timeStr}">${timeStr}${company}</div>`;
+                    });
+                    
+                    // 如果还有更多面试记录，显示数量
+                    if (interviewsByDate[dateStr].length > 3) {
+                        calendarHTML += `<div class="interview-count">还有 ${interviewsByDate[dateStr].length - 3} 个面试</div>`;
+                    }
+                }
+                
+                calendarHTML += `</div>`;
+            }
+            
+            calendarHTML += `</div>`;
+            calendarEl.innerHTML = calendarHTML;
+        }
+
+        // 更新日历显示
+        function updateCalendar(data) {
+            renderInterviewCalendar(data);
+            // 为有面试的日期添加点击事件监听器
+            addCalendarClickEvents(data);
+        }
+        
+        // 为日历日期添加点击事件监听器
+        function addCalendarClickEvents(data) {
+            // 按日期组织面试数据
+            const interviewsByDate = {};
+            data.forEach(item => {
+                if (item.datetime) {
+                    const dateKey = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    if (!interviewsByDate[dateKey]) {
+                        interviewsByDate[dateKey] = [];
+                    }
+                    interviewsByDate[dateKey].push(item);
+                }
+            });
+            
+            // 为有面试的日期添加点击事件
+            document.querySelectorAll('.calendar-day[data-has-interview="true"]').forEach(dayElement => {
+                const dateStr = dayElement.getAttribute('data-date');
+                if (interviewsByDate[dateStr]) {
+                    dayElement.addEventListener('click', () => {
+                        showInterviewDetails(dateStr, interviewsByDate[dateStr]);
+                    });
+                }
+            });
+        }
+
+        // 前一年
+        function prevYear(data) {
+            currentYear--;
+            updateCalendar(data);
+        }
+
+        // 后一年
+        function nextYear(data) {
+            currentYear++;
+            updateCalendar(data);
+        }
+
+        // 上个月
+        function prevMonth(data) {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            updateCalendar(data);
+        }
+
+        // 下个月
+        function nextMonth(data) {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            updateCalendar(data);
+        }
+
+        // 加载投递数据并渲染图表
+        function loadDeliveryData() {
+            // 显示加载状态
+            showMessage('正在加载投递数据...', 'loading');
+            
+            fetch(`${API_BASE}/deliveries`)
+                .then(response => {
+                    // 检查响应状态
+                    if (response.status === 503) {
+                        // 数据库未初始化，重定向到配置页面
+                        window.location.href = '/config';
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 检查是否有数据返回
+                    if (!data) return;
+                    
+                    showMessage(`加载完成，共找到 ${data.length} 条投递记录`, 'success');
+                    
+                    // 渲染图表
+                    renderDeliveryCharts(data);
+                })
+                .catch(error => {
+                    console.error('加载投递数据失败:', error);
+                    showMessage('加载投递数据失败: ' + error.message, 'error');
+                });
+        }
+
+        // 渲染投递图表
+        function renderDeliveryCharts(data) {
+            // 投递状态分布 (按新的逻辑分类)
+            const statusData = { '通过': 0, '未通过': 0, '流程中': 0, '未知': 0 };
+            data.forEach(item => {
+                const status = item.status || '未知状态';
+                if (status === 'offer发放') {
+                    statusData['通过']++;
+                } else if (status === '流程已结束' || status === '已拒绝') {
+                    statusData['未通过']++;
+                } else if (status === '未知状态') {
+                    statusData['未知']++;
+                } else {
+                    // 其余状态都归为流程中
+                    statusData['流程中']++;
+                }
+            });
+            
+            // 移除值为0的分类，避免在图表中显示空白
+            const filteredStatusData = {};
+            Object.keys(statusData).forEach(key => {
+                if (statusData[key] > 0) {
+                    filteredStatusData[key] = statusData[key];
+                }
+            });
+            
+            const statusLabels = Object.keys(filteredStatusData);
+            const statusValues = statusLabels.map(label => filteredStatusData[label]);
+            
+            if (deliveryStatusChart) {
+                deliveryStatusChart.destroy();
+            }
+            
+            const statusCtx = document.getElementById('deliveryStatusChart').getContext('2d');
+            deliveryStatusChart = new Chart(statusCtx, {
+                type: 'pie',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusValues,
+                        backgroundColor: [
+                            'rgba(76, 175, 80, 0.7)',   // 绿色 - 通过
+                            'rgba(244, 67, 54, 0.7)',   // 红色 - 未通过
+                            'rgba(255, 193, 7, 0.7)',   // 黄色 - 流程中
+                            'rgba(158, 158, 158, 0.7)'  // 灰色 - 未知
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+            
+            // 投递时间趋势（按日期）
+            const trendData = {};
+            data.forEach(item => {
+                if (item.delivery_date) {
+                    const date = item.delivery_date.substring(0, 10); // YYYY-MM-DD
+                    trendData[date] = (trendData[date] || 0) + 1;
+                }
+            });
+            
+            // 获取最近30天的数据用于显示
+            const deliveryDates = Object.keys(trendData).sort();
+            const deliveryRecentDates = deliveryDates.slice(-30); // 只取最近30天
+            const trendValues = deliveryRecentDates.map(date => trendData[date]);
+            
+            if (deliveryTrendChart) {
+                deliveryTrendChart.destroy();
+            }
+            
+            const trendCtx = document.getElementById('deliveryTrendChart').getContext('2d');
+            deliveryTrendChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: deliveryRecentDates,
+                    datasets: [{
+                        label: '投递数量',
+                        data: trendValues,
+                        borderColor: 'rgba(67, 97, 238, 1)',
+                        backgroundColor: 'rgba(67, 97, 238, 0.2)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45,
+                                callback: function(value) {
+                                    // 只显示日期，不显示年份
+                                    return this.getLabelForValue(value).substring(5);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 岗位类型分布
+            const positionData = {};
+            data.forEach(item => {
+                const position = item.position || '未指定';
+                positionData[position] = (positionData[position] || 0) + 1;
+            });
+            
+            // 获取前10个最常见的岗位类型
+            const sortedPositions = Object.keys(positionData).sort((a, b) => positionData[b] - positionData[a]).slice(0, 10);
+            const positionLabels = sortedPositions;
+            const positionValues = sortedPositions.map(pos => positionData[pos]);
+            
+            if (positionTypeChart) {
+                positionTypeChart.destroy();
+            }
+            
+            const positionCtx = document.getElementById('positionTypeChart').getContext('2d');
+            positionTypeChart = new Chart(positionCtx, {
+                type: 'bar',
+                data: {
+                    labels: positionLabels,
+                    datasets: [{
+                        label: '岗位数量',
+                        data: positionValues,
+                        backgroundColor: 'rgba(156, 39, 176, 0.7)',
+                        borderColor: 'rgba(156, 39, 176, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+            
+            
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认加载面试数据
+            loadInterviewData();
+            
+            // 添加日历控件事件监听器
+            document.getElementById('prevYear').addEventListener('click', () => {
+                fetch(`${API_BASE}/interviews`)
+                    .then(response => response.json())
+                    .then(data => {
+                        prevYear(data);
+                        // 重新添加点击事件监听器
+                        setTimeout(() => addCalendarClickEvents(data), 100);
+                    });
+            });
+            
+            document.getElementById('nextYear').addEventListener('click', () => {
+                fetch(`${API_BASE}/interviews`)
+                    .then(response => response.json())
+                    .then(data => {
+                        nextYear(data);
+                        // 重新添加点击事件监听器
+                        setTimeout(() => addCalendarClickEvents(data), 100);
+                    });
+            });
+            
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                fetch(`${API_BASE}/interviews`)
+                    .then(response => response.json())
+                    .then(data => {
+                        prevMonth(data);
+                        // 重新添加点击事件监听器
+                        setTimeout(() => addCalendarClickEvents(data), 100);
+                    });
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                fetch(`${API_BASE}/interviews`)
+                    .then(response => response.json())
+                    .then(data => {
+                        nextMonth(data);
+                        // 重新添加点击事件监听器
+                        setTimeout(() => addCalendarClickEvents(data), 100);
+                    });
+            });
+        });
+    </script>
+<!-- 面试详情弹窗 -->
+    <div id="interviewDetailModal" class="modal">
+        <div class="modal-content" id="interviewDetailModalContent">
+            <div class="modal-title-bar" id="interviewDetailModalTitleBar">
+                <h2 id="interviewDetailModalTitle">面试详情</h2>
+                <span class="modal-close" id="interviewDetailModalClose">×</span>
+            </div>
+            <div class="modal-body" id="interviewDetailModalBody">
+                <!-- 面试详情将在这里显示 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 拖动功能相关变量
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+        
+        // 获取弹窗元素
+        const modal = document.getElementById('interviewDetailModal');
+        const modalContent = document.getElementById('interviewDetailModalContent');
+        const modalTitleBar = document.getElementById('interviewDetailModalTitleBar');
+        const modalClose = document.getElementById('interviewDetailModalClose');
+        
+        // 拖动功能相关函数
+        function dragStart(e) {
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            
+            if (e.target === modalTitleBar) {
+                isDragging = true;
+                modalContent.style.cursor = 'grabbing';
+            }
+        }
+        
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            
+            isDragging = false;
+            modalContent.style.cursor = 'default';
+        }
+        
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                
+                xOffset = currentX;
+                yOffset = currentY;
+                
+                setTranslate(currentX, currentY, modalContent);
+            }
+        }
+        
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+        }
+        
+        // 添加拖动事件监听器
+        modalTitleBar.addEventListener('mousedown', dragStart);
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('mousemove', drag);
+        
+        // 关闭弹窗
+        function closeInterviewDetailModal() {
+            modal.style.display = 'none';
+            // 重置拖动位置
+            xOffset = 0;
+            yOffset = 0;
+            setTranslate(0, 0, modalContent);
+        }
+        
+        // 点击关闭按钮关闭弹窗
+        modalClose.addEventListener('click', closeInterviewDetailModal);
+        
+        // 点击弹窗外部关闭弹窗
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeInterviewDetailModal();
+            }
+        });
+        
+        // 显示面试详情弹窗
+        function showInterviewDetails(dateStr, interviews) {
+            // 设置弹窗标题
+            const date = new Date(dateStr);
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                              '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            document.getElementById('interviewDetailModalTitle').textContent = 
+                `${date.getFullYear()}年${monthNames[date.getMonth()]}${date.getDate()}日 面试安排`;
+            
+            // 按时间排序面试记录
+            const sortedInterviews = [...interviews].sort((a, b) => {
+                if (a.datetime && b.datetime) {
+                    return new Date(a.datetime) - new Date(b.datetime);
+                }
+                return 0;
+            });
+            
+            // 构建面试详情内容
+            let detailHTML = '';
+            sortedInterviews.forEach(interview => {
+                const time = interview.datetime ? interview.datetime.substring(11, 16) : '时间未定';
+                const company = interview.company || '未知公司';
+                const position = interview.position || '未指定岗位';
+                const preparation = interview.preparation || '';
+                const completion = interview.completion || '';
+                const notes = interview.notes || '';
+                
+                detailHTML += `
+                    <div class="interview-detail-item">
+                        <div class="interview-time">${time}</div>
+                        <div class="interview-company">${company}</div>
+                        <div class="interview-position">${position}</div>
+                        <div>
+                            ${preparation ? `<span class="interview-status status-preparation">${preparation}</span>` : ''}
+                            ${completion ? `<span class="interview-status status-completion">${completion}</span>` : ''}
+                        </div>
+                        ${notes ? `<div class="interview-notes">${notes}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            // 显示弹窗内容
+            document.getElementById('interviewDetailModalBody').innerHTML = detailHTML;
+            modal.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

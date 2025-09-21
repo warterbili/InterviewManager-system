@@ -91,7 +91,8 @@ async function initDatabase() {
         const rootConnection = await mysql.createConnection({
             host: config.db.host,
             user: config.db.user,
-            password: config.db.password
+            password: config.db.password,
+            charset: config.db.charset
         });
     
         // 创建所有需要的数据库
@@ -120,8 +121,8 @@ async function initDatabase() {
         company VARCHAR(255) NOT NULL,
         position VARCHAR(255) NOT NULL,
         datetime DATETIME,
-        preparation BOOLEAN DEFAULT FALSE,
-        completion BOOLEAN DEFAULT FALSE,
+        preparation VARCHAR(50) DEFAULT '',
+        completion VARCHAR(50) DEFAULT '',
         notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -159,19 +160,25 @@ async function initDatabase() {
         // 插入默认数据（如果表为空）
         const [interviewRows] = await interviewDb.query('SELECT COUNT(*) as count FROM interviews');
         if (interviewRows[0].count === 0) {
-            const defaultData = [
-                ['腾讯', '前端开发', new Date('2025-09-20T09:00'), true, false],
-                ['阿里巴巴', 'Java开发', new Date('2025-09-22T14:00'), true, false],
-                ['字节跳动', '产品经理', new Date('2025-09-25T10:30'), false, false],
-                ['京东', '销售', new Date('2025-09-28T15:00'), false, false]
-            ];
-            await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion) VALUES ?', [defaultData]);
-            logMessage('插入默认面试数据');
+            try {
+                const defaultData = [
+                    ['腾讯', '前端开发', new Date('2025-01-15T09:00'), '一面', '', ''],
+                    ['阿里巴巴', 'Java开发', new Date('2025-04-20T14:00'), '二面', '', ''],
+                    ['字节跳动', '产品经理', new Date('2025-06-10T10:30'), '三面', '', ''],
+                    ['京东', '销售', new Date('2025-09-28T15:00'), '四面', '', '']
+                ];
+                await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES ?', [defaultData]);
+                logMessage('插入默认面试数据');
+            } catch (err) {
+                logMessage(`插入默认面试数据失败: ${err.message}`, 'ERROR');
+                // 不要让默认数据插入失败影响整个初始化过程
+            }
         }
     
         logMessage('数据库初始化成功');
     } catch (err) {
         logMessage(`数据库初始化失败: ${err.message}`, 'ERROR');
+        throw err; // 重新抛出错误，确保调用者知道初始化失败
     }
 }
 
@@ -236,20 +243,26 @@ app.post('/api/interviews', async (req, res) => {
         const data = req.body;
         logMessage(`收到保存面试数据请求，共 ${data.length} 条记录`);
         
-        await interviewDb.query('DELETE FROM interviews');
-        logMessage('已清空面试数据表');
-    
-        if (data.length > 0) {
-            const values = data.map(item => [
-                item.company,
-                item.position,
-                item.datetime ? new Date(item.datetime) : null,
-                item.preparation,
-                item.completion,
-                item.notes || ''
-            ]);
-            await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES ?', [values]);
-            logMessage(`成功插入 ${data.length} 条面试记录`);
+        // 添加安全检查：确保数据不为空才执行删除操作
+        if (data && Array.isArray(data)) {
+            await interviewDb.query('DELETE FROM interviews');
+            logMessage('已清空面试数据表');
+        
+            if (data.length > 0) {
+                const values = data.map(item => [
+                    item.company,
+                    item.position,
+                    item.datetime ? new Date(item.datetime) : null,
+                    item.preparation || '',
+                    item.completion || '',
+                    item.notes || ''
+                ]);
+                await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES ?', [values]);
+                logMessage(`成功插入 ${data.length} 条面试记录`);
+            }
+        } else {
+            logMessage('收到无效的面试数据，跳过保存操作', 'WARN');
+            return res.status(400).json({ error: '无效的数据格式' });
         }
     
         res.json({ message: '面试数据保存成功' });
@@ -732,6 +745,10 @@ app.get('/config', (req, res) => {
     res.sendFile(path.join(__dirname, '..', 'public', 'config.html'));
 });
 
+app.get('/analytics', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'analytics.html'));
+});
+
 // 退出系统接口
 app.post('/api/exit', (req, res) => {
     logMessage('收到退出系统请求');
@@ -755,4 +772,6 @@ loadConfig().then(() => {
     });
 }).catch(err => {
     logMessage(`启动服务器失败: ${err.message}`, 'ERROR');
+    // 退出进程，确保错误被注意到
+    process.exit(1);
 });
