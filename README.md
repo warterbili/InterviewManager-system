@@ -2,7 +2,7 @@
   <img src="images/interview_system.PNG" alt="面试管理系统" width="600"/>
 </p>
 
-<h1 align="center">面试管理系统 2.0<br/>Interview Management System 2.0</h1>
+<h1 align="center">面试管理系统 2.1<br/>Interview Management System 2.1</h1>
 
 <p align="center">
   <strong>一站式管理您的求职面试流程，轻松跟踪邮件状态和投递进度<br/>
@@ -13,7 +13,8 @@
   <a href="#功能特性--features"><img src="https://img.shields.io/badge/功能-Features-blue" alt="功能特性"></a>
   <a href="#技术栈--tech-stack"><img src="https://img.shields.io/badge/技术栈-Tech%20Stack-green" alt="技术栈"></a>
   <a href="#快速开始--quick-start"><img src="https://img.shields.io/badge/快速开始-Quick%20Start-orange" alt="快速开始"></a>
-  <a href="#版本更新--version-updates"><img src="https://img.shields.io/badge/版本-Version%202.0-blueviolet" alt="版本2.0"></a>
+  <a href="#版本更新--version-updates"><img src="https://img.shields.io/badge/版本-Version%202.1-blueviolet" alt="版本2.1"></a>
+  <a href="#数据可视化分析"><img src="https://img.shields.io/badge/新增-数据可视化分析-red" alt="数据可视化分析"></a>
 </p>
 
 ---
@@ -61,10 +62,52 @@
 - **安全保障**：敏感信息加密存储
 - **配置导入导出**：新增配置文件导入导出功能，方便备份和迁移
 
-### 数据可视化 / Data Visualization
+### 数据可视化分析 / Data Visualization Analysis
+
+#### 面试日程分析 / Interview Schedule Analysis
+- **面试时间分布**：以折线图展示每日面试数量趋势
+- **面试结果统计**：饼图展示面试结果分布（通过、未通过、未完成、未知）
+- **面试轮次与结果关联分析**：堆叠柱状图展示各轮次面试的结果分布
+- **面试轮次分布**：柱状图展示各面试轮次的数量分布
+- **面试与投递关联分析**：折线图对比面试数量与投递数量的趋势关系
+- **面试成功率趋势图**：折线图展示每日面试成功率变化
+- **面试日历视图**：日历形式展示每月面试安排，支持年月切换和点击查看详情
+
+#### 企业投递分析 / Application Tracking Analysis
+- **投递状态分布**：饼图展示投递状态分布（通过、未通过、流程中、未知）
+- **投递时间趋势**：折线图展示每日投递数量趋势
+- **岗位类型分布**：堆叠柱状图展示各岗位类型的投递状态分布
+
+#### 邮件分析 / Email Analysis
+- **邮件每日收到数量趋势**：折线图展示每日收到邮件数量趋势
+- **邮件与面试/投递关联分析**：折线图对比邮件、面试和投递数量的趋势关系
+
 - **直观界面**：清晰展示面试、邮件和投递信息
 - **搜索功能**：快速查找相关信息
-- **数据统计图表**：新增多种数据可视化图表，包括面试通过率、投递成功率等统计
+
+### 数据可视化分析 / Data Visualization Analysis
+
+系统新增了全面的数据可视化分析功能，帮助用户更好地了解求职进度和趋势：
+
+1. **面试日程分析**：通过7个不同的图表全面分析面试数据
+   - 面试时间分布趋势图
+   - 面试结果统计饼图
+   - 面试轮次与结果关联分析图
+   - 面试轮次分布柱状图
+   - 面试与投递关联分析图
+   - 面试成功率趋势图
+   - 交互式面试日历视图
+
+2. **企业投递分析**：通过3个图表深入分析投递情况
+   - 投递状态分布饼图
+   - 投递时间趋势折线图
+   - 岗位类型分布堆叠柱状图
+
+3. **邮件分析**：通过2个图表追踪邮件与求职活动关联性
+   - 邮件每日收到数量趋势图
+   - 邮件与面试/投递关联分析图
+
+所有图表均支持响应式设计，在不同设备上都能良好显示。
 
 ### 未来功能规划 / Future Features Planning
 - **高级数据可视化分析**：计划增加更多维度的数据分析功能，包括薪资趋势分析、行业需求分析、地区分布统计等
@@ -195,6 +238,7 @@
 │   ├── deliveries.html  # 投递汇总页面 / Delivery summary page
 │   ├── config.html      # 系统配置页面 / System configuration page
 │   ├── loading.html     # 加载页面 / Loading page
+│   ├── analytics.html   # 数据分析页面 / Analytics page
 │   └── common.css       # 公共样式 / Common styles
 ├── script/              # Python脚本 / Python scripts
 │   ├── qq_email_imap.py # 邮件获取脚本 / Email fetching script

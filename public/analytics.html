@@ -1365,9 +1365,14 @@
             // 邮件每日收到数量趋势（按日期）
             const emailTrendData = {};
             data.forEach(item => {
-                if (item.received_date) {
-                    const date = item.received_date.substring(0, 10); // YYYY-MM-DD
-                    emailTrendData[date] = (emailTrendData[date] || 0) + 1;
+                if (item.send_date) {
+                    // 解析RFC 2822格式的日期字符串
+                    const dateObj = new Date(item.send_date);
+                    if (!isNaN(dateObj.getTime())) {
+                        // 格式化为YYYY-MM-DD
+                        const date = dateObj.toISOString().substring(0, 10);
+                        emailTrendData[date] = (emailTrendData[date] || 0) + 1;
+                    }
                 }
             });
             
@@ -1432,9 +1437,14 @@
                 
                 // 统计邮件数据
                 data.forEach(item => {
-                    if (item.received_date) {
-                        const date = item.received_date.substring(0, 10); // YYYY-MM-DD
-                        emailCountByDate[date] = (emailCountByDate[date] || 0) + 1;
+                    if (item.send_date) {
+                        // 解析RFC 2822格式的日期字符串
+                        const dateObj = new Date(item.send_date);
+                        if (!isNaN(dateObj.getTime())) {
+                            // 格式化为YYYY-MM-DD
+                            const date = dateObj.toISOString().substring(0, 10);
+                            emailCountByDate[date] = (emailCountByDate[date] || 0) + 1;
+                        }
                     }
                 });
                 
