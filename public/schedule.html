@@ -197,6 +197,10 @@
             
             <div class="filters">
                 <div class="filter-group">
+                    <label for="searchInput">搜索:</label>
+                    <input type="text" id="searchInput" placeholder="搜索公司名称、岗位等..." style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; width: 100%;">
+                </div>
+                <div class="filter-group">
                     <label for="sortOrder">排序方式:</label>
                     <select id="sortOrder" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
                         <option value="asc">时间升序（最早优先）</option>
@@ -307,6 +311,11 @@
                 sortTableRows(rows);
             });
             
+            // 为搜索输入框添加事件监听器
+            document.getElementById('searchInput').addEventListener('input', function() {
+                filterTable();
+            });
+            
             loadData();
         };
 
@@ -334,12 +343,15 @@
             rows.forEach(row => table.appendChild(row));
         }
 
+        // 存储原始数据
+        let originalData = [];
+        
         // 从后端API加载数据
         function loadData() {
             const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
             
             // 显示加载状态
-            table.innerHTML = '<tr><td colspan="6" style="text-align: center;">正在加载数据...</td></tr>';
+            table.innerHTML = '<tr><td colspan="7" style="text-align: center;">正在加载数据...</td></tr>';
             showMessage('正在加载面试日程数据...', 'loading');
             
             fetch(`${API_BASE}/interviews`)
@@ -353,11 +365,14 @@
                     return response.json();
                 })
                 .then(data => {
+                    // 保存原始数据
+                    originalData = data;
+                    
                     // 清空现有数据
                     table.innerHTML = '';
                     
                     if (data.length === 0) {
-                        table.innerHTML = '<tr><td colspan="6" style="text-align: center;">暂无面试日程数据</td></tr>';
+                        table.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无面试日程数据</td></tr>';
                         showMessage('加载完成，暂无面试日程数据', 'success');
                         return;
                     }
@@ -379,7 +394,7 @@
                 })
                 .catch(error => {
                     console.error('加载数据失败:', error);
-                    table.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">加载数据失败: ' + error.message + '</td></tr>';
+                    table.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">加载数据失败: ' + error.message + '</td></tr>';
                     showMessage('加载数据失败: ' + error.message, 'error');
                 });
         }
@@ -403,6 +418,64 @@
             
             // 存储备注内容在行元素上
             newRow.notes = notes || '';
+        }
+        
+        // 根据搜索关键词筛选表格
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+            
+            // 清空表格
+            table.innerHTML = '';
+            
+            // 如果没有搜索词，显示所有数据
+            if (!searchTerm) {
+                originalData.forEach(item => {
+                    addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion, item.notes);
+                });
+                
+                // 获取排序顺序
+                const sortOrder = document.getElementById('sortOrder').value;
+                
+                // 获取所有数据行
+                const rows = Array.from(table.rows);
+                
+                // 按时间排序
+                sortTableRows(rows);
+                
+                showMessage(`共找到 ${originalData.length} 条面试日程`, 'success');
+                return;
+            }
+            
+            // 筛选数据
+            const filteredData = originalData.filter(item => {
+                return (
+                    (item.company && item.company.toLowerCase().includes(searchTerm)) ||
+                    (item.position && item.position.toLowerCase().includes(searchTerm))
+                );
+            });
+            
+            // 显示筛选后的数据
+            if (filteredData.length === 0) {
+                table.innerHTML = '<tr><td colspan="7" style="text-align: center;">未找到匹配的记录</td></tr>';
+                showMessage('未找到匹配的记录', 'success');
+                return;
+            }
+            
+            filteredData.forEach(item => {
+                addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion, item.notes);
+            });
+            
+            // 获取排序顺序
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            // 获取所有数据行
+            const rows = Array.from(table.rows);
+            
+            // 按时间排序
+            sortTableRows(rows);
+            
+            showMessage(`找到 ${filteredData.length} 条匹配的记录`, 'success');
         }
         
         // 添加空行

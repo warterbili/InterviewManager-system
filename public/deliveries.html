@@ -276,6 +276,12 @@
                         </div>
                         <div class="form-col">
                             <div class="form-group">
+                                <label for="position">投递岗位</label>
+                                <input type="text" id="position" aria-describedby="positionHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; transition: var(--transition); box-sizing: border-box; width: 100%;">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
                                 <label for="deliveryDate">投递时间 *</label>
                                 <input type="datetime-local" id="deliveryDate" required aria-describedby="deliveryDateHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; transition: var(--transition); box-sizing: border-box; width: 100%;">
                             </div>
@@ -285,18 +291,23 @@
                                 <label for="status">投递状态 *</label>
                                 <select id="status" required aria-describedby="statusHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
                                     <option value="">请选择状态</option>
-                                    <option value="已投递">已投递</option>
+                                    <option value="投递完成">投递完成</option>
                                     <option value="简历筛选中">简历筛选中</option>
-                                    <option value="一面通过">一面通过</option>
-                                    <option value="二面通过">二面通过</option>
-                                    <option value="终面通过">终面通过</option>
-                                    <option value="已拒绝">已拒绝</option>
-                                    <option value="待沟通">待沟通</option>
+                                    <option value="面试流程中">面试流程中</option>
+                                    <option value="笔试">笔试</option>
+                                    <option value="测评">测评</option>
+                                    <option value="offer发放">offer发放</option>
+                                    <option value="流程已结束">流程已结束</option>
+                                    <option value="未知状态">未知状态</option>
                                 </select>
                             </div>
                         </div>
                     </div>
                     <div class="filters">
+                        <div class="filter-group">
+                            <label for="searchInput">搜索:</label>
+                            <input type="text" id="searchInput" placeholder="搜索企业名称、岗位、状态等..." style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; width: 100%;">
+                        </div>
                         <div class="filter-group">
                             <label for="sortOrder">排序方式:</label>
                             <select id="sortOrder" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
@@ -326,6 +337,7 @@
                             <tr>
                                 <th scope="col">ID</th>
                                 <th scope="col">企业名称</th>
+                                <th scope="col">投递岗位</th>
                                 <th scope="col">投递时间</th>
                                 <th scope="col">投递状态</th>
                                 <th scope="col">备注</th>
@@ -415,6 +427,11 @@
                 // 按时间排序
                 sortTableRows(rows);
             });
+            
+            // 为搜索输入框添加事件监听器
+            document.getElementById('searchInput').addEventListener('input', function() {
+                filterTable();
+            });
         });
 
         // 按时间排序表格行
@@ -442,12 +459,15 @@
             rows.forEach(row => table.appendChild(row));
         }
 
+        // 存储原始数据
+        let originalData = [];
+        
         // 从后端API加载数据
         function loadData() {
             const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
             
             // 显示加载状态
-            table.innerHTML = '<tr><td colspan="5" style="text-align: center;">正在加载数据...</td></tr>';
+            table.innerHTML = '<tr><td colspan="7" style="text-align: center;">正在加载数据...</td></tr>';
             showMessage('正在加载投递记录...', 'loading');
             
             fetch(`${API_BASE}/deliveries`)
@@ -464,11 +484,14 @@
                     // 检查是否有数据返回
                     if (!data) return;
                     
+                    // 保存原始数据
+                    originalData = data;
+                    
                     // 清空现有数据
                     table.innerHTML = '';
                     
                     if (data.length === 0) {
-                        table.innerHTML = '<tr><td colspan="5" style="text-align: center;">暂无投递记录</td></tr>';
+                        table.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无投递记录</td></tr>';
                         showMessage('加载完成，暂无投递记录', 'success');
                         return;
                     }
@@ -490,7 +513,7 @@
                 })
                 .catch(error => {
                     console.error('加载数据失败:', error);
-                    table.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">加载数据失败: ' + error.message + '</td></tr>';
+                    table.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">加载数据失败: ' + error.message + '</td></tr>';
                     showMessage('加载数据失败: ' + error.message, 'error');
                 });
         }
@@ -506,14 +529,16 @@
             // 创建单元格
             const idCell = newRow.insertCell(0);
             const companyCell = newRow.insertCell(1);
-            const dateCell = newRow.insertCell(2);
-            const statusCell = newRow.insertCell(3);
-            const notesCell = newRow.insertCell(4);
-            const actionCell = newRow.insertCell(5);
+            const positionCell = newRow.insertCell(2);
+            const dateCell = newRow.insertCell(3);
+            const statusCell = newRow.insertCell(4);
+            const notesCell = newRow.insertCell(5);
+            const actionCell = newRow.insertCell(6);
             
             // 填充单元格内容
             idCell.textContent = item.id;
             companyCell.textContent = item.company_name;
+            positionCell.textContent = item.position || '';
             dateCell.textContent = formattedDate;
             statusCell.textContent = item.status;
             notesCell.innerHTML = '<button type="button" class="btn btn-secondary" onclick="openNotesModal(this)">备注</button>';
@@ -526,7 +551,7 @@
             editBtn.type = 'button';
             editBtn.className = 'btn btn-warning';
             editBtn.textContent = '编辑';
-            editBtn.addEventListener('click', () => editRecord(item.id, item.company_name, item.delivery_date, item.status));
+            editBtn.addEventListener('click', () => editRecord(item.id, item.company_name, item.position, item.delivery_date, item.status));
             
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
@@ -540,14 +565,75 @@
             actionCell.className = 'action-buttons';
         }
         
+        // 根据搜索关键词筛选表格
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
+            
+            // 清空表格
+            table.innerHTML = '';
+            
+            // 如果没有搜索词，显示所有数据
+            if (!searchTerm) {
+                originalData.forEach(item => {
+                    addRowToTable(item);
+                });
+                
+                // 获取排序顺序
+                const sortOrder = document.getElementById('sortOrder').value;
+                
+                // 获取所有数据行
+                const rows = Array.from(table.rows);
+                
+                // 按时间排序
+                sortTableRows(rows);
+                
+                showMessage(`共找到 ${originalData.length} 条投递记录`, 'success');
+                return;
+            }
+            
+            // 筛选数据
+            const filteredData = originalData.filter(item => {
+                return (
+                    (item.company_name && item.company_name.toLowerCase().includes(searchTerm)) ||
+                    (item.position && item.position.toLowerCase().includes(searchTerm)) ||
+                    (item.status && item.status.toLowerCase().includes(searchTerm)) ||
+                    (item.delivery_date && formatDeliveryDate(item.delivery_date).toLowerCase().includes(searchTerm))
+                );
+            });
+            
+            // 显示筛选后的数据
+            if (filteredData.length === 0) {
+                table.innerHTML = '<tr><td colspan="7" style="text-align: center;">未找到匹配的记录</td></tr>';
+                showMessage('未找到匹配的记录', 'success');
+                return;
+            }
+            
+            filteredData.forEach(item => {
+                addRowToTable(item);
+            });
+            
+            // 获取排序顺序
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            // 获取所有数据行
+            const rows = Array.from(table.rows);
+            
+            // 按时间排序
+            sortTableRows(rows);
+            
+            showMessage(`找到 ${filteredData.length} 条匹配的记录`, 'success');
+        }
+        
         // 编辑记录
-        function editRecord(id, companyName, deliveryDate, status) {
+        function editRecord(id, companyName, position, deliveryDate, status) {
             // 设置表单标题
             document.getElementById('form-title').textContent = '编辑投递记录';
             
             // 填充表单数据
             document.getElementById('recordId').value = id;
             document.getElementById('companyName').value = companyName;
+            document.getElementById('position').value = position || '';
             document.getElementById('deliveryDate').value = deliveryDate ? deliveryDate.slice(0, 16) : '';
             document.getElementById('status').value = status;
             
@@ -575,6 +661,7 @@
         function saveRecord() {
             const id = document.getElementById('recordId').value;
             const companyName = document.getElementById('companyName').value;
+            const position = document.getElementById('position').value;
             const deliveryDate = document.getElementById('deliveryDate').value;
             const status = document.getElementById('status').value;
             
@@ -586,6 +673,7 @@
             
             const recordData = {
                 company_name: companyName,
+                position: position,
                 delivery_date: deliveryDate,
                 status: status
             };

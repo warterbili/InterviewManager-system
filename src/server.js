@@ -147,6 +147,7 @@ async function initDatabase() {
       CREATE TABLE IF NOT EXISTS deliveries (
         id INT AUTO_INCREMENT PRIMARY KEY,
         company_name VARCHAR(255) NOT NULL,
+        position VARCHAR(255),
         delivery_date DATETIME NOT NULL,
         status VARCHAR(100) NOT NULL,
         notes TEXT,
@@ -605,6 +606,7 @@ app.get('/api/deliveries', async (req, res) => {
         const data = rows.map(row => ({
             id: row.id,
             company_name: row.company_name,
+            position: row.position || '',
             delivery_date: row.delivery_date,
             status: row.status,
             notes: row.notes || ''
@@ -622,7 +624,7 @@ app.post('/api/deliveries', async (req, res) => {
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
-        const { company_name, delivery_date, status } = req.body;
+        const { company_name, position, delivery_date, status } = req.body;
     
         // 检查必填字段
         if (!company_name || !delivery_date || !status) {
@@ -631,8 +633,8 @@ app.post('/api/deliveries', async (req, res) => {
     
         // 插入数据
         const [result] = await deliveryDb.query(
-            'INSERT INTO deliveries (company_name, delivery_date, status) VALUES (?, ?, ?)',
-            [company_name, delivery_date, status]
+            'INSERT INTO deliveries (company_name, position, delivery_date, status) VALUES (?, ?, ?, ?)',
+            [company_name, position || '', delivery_date, status]
         );
     
         res.json({ message: '投递记录添加成功', id: result.insertId });
@@ -653,7 +655,7 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
     
         const { id } = req.params;
-        const { company_name, delivery_date, status, notes } = req.body;
+        const { company_name, position, delivery_date, status, notes } = req.body;
     
         if (!/^[0-9]+$/.test(id)) {
             return res.status(400).json({ error: '无效的投递ID' });
@@ -664,8 +666,8 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
     
         const [result] = await deliveryDb.query(
-            'UPDATE deliveries SET company_name = ?, delivery_date = ?, status = ?, notes = ? WHERE id = ?',
-            [company_name, delivery_date, status, notes || '', id]
+            'UPDATE deliveries SET company_name = ?, position = ?, delivery_date = ?, status = ?, notes = ? WHERE id = ?',
+            [company_name, position || '', delivery_date, status, notes || '', id]
         );
     
         if (result.affectedRows === 0) {
@@ -680,7 +682,7 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
         res.status(500).json({ error: '更新投递记录失败' });
     }
-});;
+});
 
 app.delete('/api/deliveries/:id', async (req, res) => {
     try {
