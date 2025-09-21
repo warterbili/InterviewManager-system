@@ -324,6 +324,9 @@
                                 <button type="button" class="btn btn-primary" id="resetBtn" style="min-height: calc(2.25rem + 2px);">
                                     重置
                                 </button>
+                                <button type="button" class="btn btn-info" id="exportBtn" style="min-height: calc(2.25rem + 2px);">
+                                    导出CSV
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -418,6 +421,7 @@
             // 添加事件监听器
             document.getElementById('saveBtn').addEventListener('click', saveRecord);
             document.getElementById('resetBtn').addEventListener('click', resetForm);
+            document.getElementById('exportBtn').addEventListener('click', exportToCSV);
             
             // 为排序选择器添加事件监听器
             document.getElementById('sortOrder').addEventListener('change', function() {
@@ -856,6 +860,60 @@
             if (event.target === modal) {
                 closeNotesModal();
             }
+        }
+        
+        // 导出数据为CSV文件
+        function exportToCSV() {
+            // 获取表格数据
+            const data = originalData;
+            
+            if (data.length === 0) {
+                showMessage('没有数据可导出', 'error');
+                return;
+            }
+            
+            // 定义CSV列标题
+            const headers = ['ID', '企业名称', '投递岗位', '投递时间', '投递状态', '备注'];
+            
+            // 创建CSV内容
+            let csvContent = '\uFEFF' + headers.join(',') + '\n'; // 添加BOM以支持中文
+            
+            // 添加数据行
+            data.forEach(item => {
+                const row = [
+                    item.id,
+                    item.company_name,
+                    item.position || '',
+                    formatDeliveryDate(item.delivery_date),
+                    item.status,
+                    item.notes || ''
+                ];
+                
+                // 转义包含逗号或双引号的字段
+                const escapedRow = row.map(field => {
+                    if (field === null || field === undefined) return '';
+                    const str = String(field);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                });
+                
+                csvContent += escapedRow.join(',') + '\n';
+            });
+            
+            // 创建下载链接
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', '企业投递汇总_' + new Date().toISOString().slice(0, 10) + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('CSV文件导出成功', 'success');
         }
     </script>
 </body>

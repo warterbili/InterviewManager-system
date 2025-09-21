@@ -216,6 +216,9 @@
                         <button type="button" class="btn btn-primary" onclick="saveData()" style="min-height: calc(2.25rem + 2px);">
                             保存数据
                         </button>
+                        <button type="button" class="btn btn-info" onclick="exportToCSV()" style="min-height: calc(2.25rem + 2px);">
+                            导出CSV
+                        </button>
                     </div>
                 </div>
             </div>
@@ -230,8 +233,8 @@
                                 <th>公司名称</th>
                                 <th>岗位</th>
                                 <th>面试时间</th>
-                                <th>准备状态</th>
-                                <th>完成情况</th>
+                                <th>面试状态</th>
+                                <th>面试结果</th>
                                 <th>备注</th>
                                 <th>操作</th>
                             </tr>
@@ -378,7 +381,15 @@
                     }
                     
                     data.forEach(item => {
-                        addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion, item.notes);
+                        // 兼容旧数据格式
+                        const preparation = item.preparation === true ? '一面' : 
+                                          item.preparation === false ? '' : 
+                                          item.preparation || '';
+                        const completion = item.completion === true ? '' : 
+                                         item.completion === false ? '' : 
+                                         item.completion || '';
+                        
+                        addRowWithData(item.company, item.position, item.datetime, preparation, completion, item.notes);
                     });
                     
                     // 获取排序顺序
@@ -404,14 +415,47 @@
             const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
             const newRow = table.insertRow();
             
+            // 面试状态选项
+            const statusOptions = [
+                { value: '一面', text: '一面' },
+                { value: '二面', text: '二面' },
+                { value: '三面', text: '三面' },
+                { value: '四面', text: '四面' },
+                { value: '五面', text: '五面' },
+                { value: '六面', text: '六面' }
+            ];
+            
+            // 面试结果选项
+            const resultOptions = [
+                { value: '', text: '请选择' },
+                { value: '已过', text: '已过' },
+                { value: '已挂', text: '已挂' }
+            ];
+            
+            // 构建面试状态下拉选项
+            let statusSelect = `<select>`;
+            statusOptions.forEach(option => {
+                const selected = preparation === option.value ? 'selected' : '';
+                statusSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
+            });
+            statusSelect += `</select>`;
+            
+            // 构建面试结果下拉选项
+            let resultSelect = `<select>`;
+            resultOptions.forEach(option => {
+                const selected = completion === option.value ? 'selected' : '';
+                resultSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
+            });
+            resultSelect += `</select>`;
+            
             newRow.innerHTML = `
                 <td><input type="text" value="${company || ''}"></td>
                 <td><input type="text" value="${position || ''}"></td>
                 <td><input type="datetime-local" value="${datetime || ''}"></td>
-                <td><input type="checkbox" ${preparation ? 'checked' : ''}></td>
-                <td><input type="checkbox" ${completion ? 'checked' : ''}></td>
+                <td>${statusSelect}</td>
+                <td>${resultSelect}</td>
                 <td><button type="button" class="btn btn-secondary" onclick="openNotesModal(this)">备注</button></td>
-                <td class="action-buttons">
+                <td>
                     <button type="button" class="btn btn-danger" onclick="deleteRow(this)">删除</button>
                 </td>
             `;
@@ -514,8 +558,8 @@
                 const company = cells[0].getElementsByTagName('input')[0].value;
                 const position = cells[1].getElementsByTagName('input')[0].value;
                 const datetime = cells[2].getElementsByTagName('input')[0].value;
-                const preparation = cells[3].getElementsByTagName('input')[0].checked;
-                const completion = cells[4].getElementsByTagName('input')[0].checked;
+                const preparation = cells[3].getElementsByTagName('select')[0].value;
+                const completion = cells[4].getElementsByTagName('select')[0].value;
                 const notes = rows[i].notes || '';
                 
                 data.push({
@@ -674,6 +718,60 @@
             if (event.target === modal) {
                 closeNotesModal();
             }
+        }
+        
+        // 导出数据为CSV文件
+        function exportToCSV() {
+            // 获取表格数据
+            const data = originalData;
+            
+            if (data.length === 0) {
+                showMessage('没有数据可导出', 'error');
+                return;
+            }
+            
+            // 定义CSV列标题
+            const headers = ['公司名称', '岗位', '面试时间', '面试状态', '面试结果', '备注'];
+            
+            // 创建CSV内容
+            let csvContent = '\uFEFF' + headers.join(',') + '\n'; // 添加BOM以支持中文
+            
+            // 添加数据行
+            data.forEach(item => {
+                const row = [
+                    item.company || '',
+                    item.position || '',
+                    item.datetime || '',
+                    item.preparation || '',
+                    item.completion || '',
+                    item.notes || ''
+                ];
+                
+                // 转义包含逗号或双引号的字段
+                const escapedRow = row.map(field => {
+                    if (field === null || field === undefined) return '';
+                    const str = String(field);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return str;
+                });
+                
+                csvContent += escapedRow.join(',') + '\n';
+            });
+            
+            // 创建下载链接
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', '面试日程安排_' + new Date().toISOString().slice(0, 10) + '.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage('CSV文件导出成功', 'success');
         }
     </script>
     </script>
