@@ -13,7 +13,6 @@
   <a href="#功能特性--features"><img src="https://img.shields.io/badge/功能-Features-blue" alt="功能特性"></a>
   <a href="#技术栈--tech-stack"><img src="https://img.shields.io/badge/技术栈-Tech%20Stack-green" alt="技术栈"></a>
   <a href="#快速开始--quick-start"><img src="https://img.shields.io/badge/快速开始-Quick%20Start-orange" alt="快速开始"></a>
-  <a href="#license"><img src="https://img.shields.io/badge/许可证-License-red" alt="许可证"></a>
   <a href="#版本更新--version-updates"><img src="https://img.shields.io/badge/版本-Version%202.0-blueviolet" alt="版本2.0"></a>
 </p>
 
@@ -32,6 +31,7 @@
   - [邮箱配置 / Email Configuration](#邮箱配置--email-configuration)
 - [项目结构 / Project Structure](#项目结构--project-structure)
 - [依赖说明 / Dependencies](#依赖说明--dependencies)
+- [版本更新 / Version Updates](#版本更新--version-updates)
 - [License](#license)
 
 ---
@@ -229,49 +229,3 @@
 本项目采用MIT许可证，详情请见[LICENSE](LICENSE)文件。
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 版本更新 / Version Updates
-
-### 版本 2.0 更新内容 / Version 2.0 Release Notes
-
-#### 新增功能 / New Features
-- **面试提醒功能**：系统会在面试前30分钟自动提醒用户，避免错过重要面试
-- **邮件内容搜索**：支持对邮件内容进行全文搜索，快速定位关键信息
-- **投递进度可视化**：新增图表展示功能，直观呈现投递状态和成功率
-- **配置导入导出**：支持配置文件的导入导出，方便用户备份和迁移系统配置
-- **数据统计图表**：新增多种数据可视化图表，帮助用户分析求职进度和成功率
-
-#### 功能优化 / Improvements
-- **性能优化**：优化数据库查询性能，提升大量数据下的系统响应速度
-- **界面优化**：改进用户界面，提供更好的用户体验
-- **邮件处理优化**：提升邮件处理效率，支持更多邮件格式
-
-#### 修复问题 / Bug Fixes
-- 修复了邮件重复抓取的问题
-- 修复了数据库连接不稳定的问题
-- 修复了部分界面在移动设备上的显示问题
-
-### 版本 1.0 更新内容 / Version 1.0 Release Notes
-- 初始版本发布
-- 实现基本的面试日程管理、邮件跟踪和投递记录功能
-
-### 未来版本规划 / Future Version Planning
-- **可视化分析增强**：计划在后续版本中增加更丰富的数据可视化功能，包括：
-  - 薪资水平趋势图表
-  - 行业需求热力图
-  - 地区分布统计图
-  - 投递成功率与时间关系分析
-  - 面试通过率与准备时间关联分析
-  
-- **动态爬虫自动投递简历**：计划开发智能爬虫模块，实现：
-  - 自动抓取主流招聘网站职位信息
-  - 智能解析职位要求和关键词
-  - 根据用户简历自动匹配合适职位
-  - 一键批量投递功能
-  - 投递后自动跟踪状态更新
-  
-- **AI智能助手**：计划引入人工智能技术，提供：
-  - 常见面试问题智能练习
-  - 简历优化建议
-  - 面试表现分析与改进建议
-  - 个性化求职策略推荐
