@@ -1,6 +1,6 @@
 {
   "name": "interview-management-system",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "面试管理系统 - 集成面试日程安排和企业邮件状态跟踪",
   "main": "src/server.js",
   "type": "module",
@@ -21,10 +21,11 @@
   },
   "keywords": [
     "interview",
-    "schedule",
-    "email",
-    "tracking"
+    "job-search",
+    "career-tools",
+    "email-tracking",
+    "interview-scheduler"
   ],
-  "author": "Developer",
-  "license": "ISC"
+  "author": "Interview Management System Team",
+  "license": "MIT"
 }

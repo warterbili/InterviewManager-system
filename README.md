@@ -2,7 +2,7 @@
   <img src="images/interview_system.PNG" alt="面试管理系统" width="600"/>
 </p>
 
-<h1 align="center">面试管理系统<br/>Interview Management System</h1>
+<h1 align="center">面试管理系统 2.0<br/>Interview Management System 2.0</h1>
 
 <p align="center">
   <strong>一站式管理您的求职面试流程，轻松跟踪邮件状态和投递进度<br/>
@@ -14,6 +14,7 @@
   <a href="#技术栈--tech-stack"><img src="https://img.shields.io/badge/技术栈-Tech%20Stack-green" alt="技术栈"></a>
   <a href="#快速开始--quick-start"><img src="https://img.shields.io/badge/快速开始-Quick%20Start-orange" alt="快速开始"></a>
   <a href="#license"><img src="https://img.shields.io/badge/许可证-License-red" alt="许可证"></a>
+  <a href="#版本更新--version-updates"><img src="https://img.shields.io/badge/版本-Version%202.0-blueviolet" alt="版本2.0"></a>
 </p>
 
 ---
@@ -40,27 +41,30 @@
 ### 面试日程安排 / Interview Scheduling
 - **管理面试日程**：记录公司、岗位、时间等信息
 - **状态标记**：可标记准备状态和完成情况
-- ~~手动提醒功能~~
+- **面试提醒功能**：新增面试前提醒功能，确保不会错过重要面试
 
 ### 企业邮件跟踪 / Email Tracking
 - **自动获取邮件**：通过IMAP协议自动抓取企业邮件
 - **分类管理**：跟踪面试邀请、笔试通知、评测结果等
 - **实时更新**：自动同步最新邮件状态
+- **邮件内容搜索**：新增邮件内容全文搜索功能，快速定位关键信息
 
 ### 企业投递汇总 / Application Tracking
 - **投递记录**：记录企业投递情况和时间
 - **状态管理**：跟踪投递状态变化
 - **数据统计**：汇总分析投递成功率
+- **投递进度可视化**：新增图表展示功能，直观了解求职进度
 
 ### 系统配置 / System Configuration
 - **灵活配置**：支持数据库和邮箱参数自定义
 - **QQ邮箱支持**：专为QQ邮箱优化的IMAP集成
 - **安全保障**：敏感信息加密存储
+- **配置导入导出**：新增配置文件导入导出功能，方便备份和迁移
 
 ### 数据可视化 / Data Visualization
 - **直观界面**：清晰展示面试、邮件和投递信息
 - **搜索功能**：快速查找相关信息
-- ~~图表分析~~
+- **数据统计图表**：新增多种数据可视化图表，包括面试通过率、投递成功率等统计
 
 ---
 
@@ -218,3 +222,24 @@
 本项目采用MIT许可证，详情请见[LICENSE](LICENSE)文件。
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 版本更新 / Version Updates
+
+### 版本 2.0 更新内容 / Version 2.0 Release Notes
+
+#### 新增功能 / New Features
+- **备注功能**：添加备注功能
+- **提供邮件已投递标注**：可以防止重复查看邮件。
+
+
+#### 功能优化 / Improvements
+- **性能优化**：优化数据库查询性能，提升大量数据下的系统响应速度
+- **界面优化**：改进用户界面，提供更好的用户体验
+
+#### 修复问题 / Bug Fixes
+- 修复了邮件重复抓取的问题
+- 修复了数据库连接不稳定的问题
+
+### 版本 1.0 更新内容 / Version 1.0 Release Notes
+- 初始版本发布
+- 实现基本的面试日程管理、邮件跟踪和投递记录功能
