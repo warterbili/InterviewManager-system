@@ -1,0 +1,245 @@
+[2025-09-21T10:25:07.442Z] [INFO] 正在启动面试管理系统...
+[2025-09-21T10:25:07.449Z] [INFO] 正在加载配置文件...
+[2025-09-21T10:25:07.450Z] [INFO] 配置文件加载成功
+[2025-09-21T10:25:07.450Z] [INFO] 配置文件加载完成
+[2025-09-21T10:25:07.451Z] [INFO] 正在初始化数据库连接...
+[2025-09-21T10:25:07.452Z] [INFO] 正在连接数据库...
+[2025-09-21T10:25:07.497Z] [INFO] 创建/检查 interview_schedule 数据库
+[2025-09-21T10:25:07.499Z] [INFO] 创建/检查 job_emails 数据库
+[2025-09-21T10:25:07.502Z] [INFO] 创建/检查 job_deliveries 数据库
+[2025-09-21T10:25:07.503Z] [INFO] 数据库连接池创建成功
+[2025-09-21T10:25:07.511Z] [INFO] 创建/检查 interviews 表
+[2025-09-21T10:25:07.516Z] [INFO] 创建/检查 all_emails 表
+[2025-09-21T10:25:07.520Z] [INFO] 创建/检查 deliveries 表
+[2025-09-21T10:25:07.523Z] [INFO] 数据库初始化成功
+[2025-09-21T10:25:07.524Z] [INFO] 数据库初始化完成
+[2025-09-21T10:25:07.526Z] [INFO] 服务器运行在 http://localhost:3001
+[2025-09-21T10:25:08.579Z] [INFO] 收到获取配置请求
+[2025-09-21T10:25:08.587Z] [INFO] 正在加载配置文件...
+[2025-09-21T10:25:08.590Z] [INFO] 配置文件加载成功
+[2025-09-21T10:25:08.595Z] [INFO] 配置信息已返回
+[2025-09-21T10:25:08.837Z] [INFO] 收到获取配置请求
+[2025-09-21T10:25:08.839Z] [INFO] 正在加载配置文件...
+[2025-09-21T10:25:08.840Z] [INFO] 配置文件加载成功
+[2025-09-21T10:25:08.842Z] [INFO] 配置信息已返回
+[2025-09-21T10:25:09.590Z] [INFO] 收到获取配置请求
+[2025-09-21T10:25:09.591Z] [INFO] 正在加载配置文件...
+[2025-09-21T10:25:09.592Z] [INFO] 配置文件加载成功
+[2025-09-21T10:25:09.593Z] [INFO] 配置信息已返回
+[2025-09-21T10:25:15.405Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:15.405Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:15.407Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:15.498Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:15.504Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:16.928Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:16.928Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:16.929Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:16.984Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:16.989Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:17.407Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:17.408Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:17.408Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:17.465Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:17.470Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:17.696Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:17.697Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:17.698Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:17.753Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:17.758Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:17.971Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:17.971Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:17.973Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:18.029Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:18.034Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:18.171Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:18.171Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:18.172Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:18.228Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:18.233Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:18.361Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:18.362Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:18.363Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:18.420Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:18.426Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:18.536Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:18.537Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:18.538Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:18.593Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:18.599Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:18.722Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:18.723Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:18.724Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:18.779Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:18.784Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:18.890Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:18.890Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:18.892Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:18.947Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:18.952Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:19.061Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:19.061Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:19.062Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:19.118Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:19.123Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:19.217Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:19.218Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:19.218Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:19.274Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:19.279Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:19.393Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:19.394Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:19.395Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:19.449Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:19.454Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:19.561Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:19.561Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:19.562Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:19.619Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:19.624Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:19.712Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:19.712Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:19.713Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:19.768Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:19.773Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:19.890Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:19.891Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:19.892Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:19.947Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:19.952Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:20.056Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:20.057Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:20.058Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:20.113Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:20.118Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:20.219Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:20.220Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:20.221Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:20.276Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:20.282Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:20.376Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:20.376Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:20.377Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:20.432Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:20.437Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:25:21.882Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:25:21.882Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:25:21.884Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:25:21.944Z] [DEBUG] 邮件获取脚本日志: File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+[2025-09-21T10:25:21.949Z] [ERROR] 邮件获取失败或被中断，错误:   File "D:\���Թ���ϵͳ\script\qq_email_imap.py", line 159
+    email_ids = client.search(search_criteria)
+IndentationError: expected an indented block after 'except' statement on line 156
+
+[2025-09-21T10:36:12.070Z] [INFO] 收到获取邮件请求
+[2025-09-21T10:36:12.070Z] [INFO] 正在执行邮件获取脚本: D:\面试管理系统\script\qq_email_imap.py
+[2025-09-21T10:36:12.072Z] [INFO] 获取指定日期范围的邮件: 2025-09-19 到 2025-09-21
+[2025-09-21T10:36:18.176Z] [INFO] 邮件获取脚本输出: �ɹ����� 50 ���ʼ�
+�ű�ִ����ɣ�����ֵ: 50...
+[2025-09-21T10:36:18.195Z] [INFO] 邮件获取脚本执行完成
+[2025-09-21T10:36:18.196Z] [INFO] 邮件获取完成，新增 50 封邮件
+[2025-09-21T10:36:40.420Z] [INFO] 收到获取配置请求
+[2025-09-21T10:36:40.421Z] [INFO] 正在加载配置文件...
+[2025-09-21T10:36:40.422Z] [INFO] 配置文件加载成功
+[2025-09-21T10:36:40.425Z] [INFO] 配置信息已返回
+[2025-09-21T10:36:41.673Z] [INFO] 收到获取配置请求
+[2025-09-21T10:36:41.674Z] [INFO] 正在加载配置文件...
+[2025-09-21T10:36:41.675Z] [INFO] 配置文件加载成功
+[2025-09-21T10:36:41.677Z] [INFO] 配置信息已返回
+[2025-09-21T10:36:41.689Z] [INFO] 收到获取面试数据请求
+[2025-09-21T10:36:41.701Z] [INFO] 成功返回 7 条面试数据

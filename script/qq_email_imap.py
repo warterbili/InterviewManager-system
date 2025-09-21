@@ -155,6 +155,11 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                 # logger.info(f"Searching with date range: {start_date} to {end_date}")
             except ValueError as e:
                 # logger.error(f"Invalid date format: {e}")
+                # 如果日期格式无效，则使用默认搜索条件
+                search_criteria = ['ALL']
+        else:
+            # 如果没有指定日期范围，则使用默认搜索条件
+            search_criteria = ['ALL']
         
         email_ids = client.search(search_criteria)
         # logger.info(f"Found {len(email_ids)} emails")
@@ -213,7 +218,7 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                     emails.append(email_info)
                     # logger.debug(f"Successfully processed email: {subject[:50]}...")
             except Exception as e:
-                logger.error(f"Error fetching email batch data: {e}")
+                # logger.error(f"Error fetching email batch data: {e}")
                 continue
         
         # logger.info(f"Email processing completed, processed {len(emails)} emails")
@@ -252,6 +257,7 @@ def main():
         # logger.info(f"Connecting to email: {email}@{imap_server}")
         if start_date and end_date:
             # logger.info(f"Searching with date range: {start_date} to {end_date}")
+            pass  # 这里可能需要添加更多的逻辑，但现在只是占位符
         
         mail = connect_to_qq_mail(email, password, imap_server)
         # logger.info("Start fetching emails...")
@@ -263,6 +269,8 @@ def main():
             # logger.info("Email connection closed")
         except Exception as e:
             # logger.warning(f"Error closing email connection: {e}")
+            # 记录错误但继续执行
+            pass
         
         if not emails:
             # logger.info("No emails fetched")
