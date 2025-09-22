@@ -248,16 +248,16 @@ app.post('/api/interviews', async (req, res) => {
         const data = req.body;
         logMessage(`收到保存面试数据请求: ${JSON.stringify(data)}`);
         
-        // 检查必填字段
-        if (!data.company || !data.datetime) {
+        // 检查必填字段 - 使用前端发送的字段名
+        if (!data.company_name || !data.interview_date) {
             logMessage('缺少必填字段', 'WARN');
             return res.status(400).json({ error: '公司名称和面试时间是必填字段' });
         }
         
-        // 插入新记录
+        // 插入新记录 - 映射前端字段到数据库字段
         const [result] = await interviewDb.query(
             'INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES (?, ?, ?, ?, ?, ?)',
-            [data.company, data.position || '', new Date(data.datetime), data.preparation || '', data.completion || '', data.notes || '']
+            [data.company_name, data.position || '', new Date(data.interview_date), data.status || '', data.result || '', '']
         );
         logMessage(`插入新面试记录，ID: ${result.insertId}`);
         
@@ -287,22 +287,17 @@ app.put('/api/interviews/:id', async (req, res) => {
             return res.status(400).json({ error: '无效的记录ID' });
         }
         
-        // 检查必填字段
-        if (!data.company || !data.datetime) {
+        // 检查必填字段 - 使用前端发送的字段名
+        if (!data.company_name || !data.interview_date) {
             logMessage('缺少必填字段', 'WARN');
             return res.status(400).json({ error: '公司名称和面试时间是必填字段' });
         }
         
-        // 构造更新语句，只有在提供了notes字段时才更新它
+        // 构造更新语句，映射前端字段到数据库字段
         let query = 'UPDATE interviews SET company = ?, position = ?, datetime = ?, preparation = ?, completion = ?';
-        let params = [data.company, data.position || '', new Date(data.datetime), data.preparation || '', data.completion || ''];
+        let params = [data.company_name, data.position || '', new Date(data.interview_date), data.status || '', data.result || ''];
         
-        // 只有在明确提供了notes字段时才更新它
-        if (data.notes !== undefined) {
-            query += ', notes = ?';
-            params.push(data.notes || '');
-        }
-        
+        // 更新记录
         query += ' WHERE id = ?';
         params.push(id);
         

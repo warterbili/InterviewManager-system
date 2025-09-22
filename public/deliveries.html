@@ -5,6 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>企业投递汇总</title>
     <link rel="stylesheet" href="./common.css">
+<style>
+        /* 面试弹窗样式 */
+        #interviewModal .modal-body {
+            padding: var(--spacing-md);
+        }
+        
+        #interviewModal .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        #interviewModal .form-group label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+            color: var(--gray-800);
+            font-size: 0.9rem;
+        }
+        
+        #interviewModal .form-control {
+            width: 100%;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
+            font-size: 0.9rem;
+            transition: var(--transition-normal);
+            box-sizing: border-box;
+            background-color: var(--white-color);
+            min-height: var(--form-control-height);
+            color: var(--gray-900);
+        }
+        
+        #interviewModal .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+        }
+        
+        #interviewModal .modal-footer {
+            padding: var(--spacing-sm);
+        }
+        
+        /* 提高弹窗中文本的对比度 */
+        #interviewModal {
+            color: var(--gray-900);
+        }
+        
+        #interviewModal h2 {
+            color: var(--white-color);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+    </style>
 </head>
 <body>
     <a href="#main-content" class="skip-link">跳转到主要内容</a>
@@ -109,11 +160,11 @@
                     <table id="deliveryTable" class="delivery-table" aria-label="投递记录列表">
                         <thead>
                             <tr>
-                                <th scope="col">ID</th>
                                 <th scope="col">企业名称</th>
                                 <th scope="col">投递岗位</th>
                                 <th scope="col">投递时间</th>
                                 <th scope="col">投递状态</th>
+                                <th scope="col">邮件正文</th>
                                 <th scope="col">备注</th>
                                 <th scope="col">操作</th>
                             </tr>
@@ -141,6 +192,58 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeNotesModal()">取消</button>
                 <button type="button" class="btn btn-primary" onclick="saveNotes()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 面试日程编辑弹窗 -->
+    <div id="interviewModal" class="modal">
+        <div class="modal-content" id="interviewModalContent">
+            <div class="modal-title-bar">
+                <h2>添加到面试日程</h2>
+                <span class="modal-close" onclick="closeInterviewModal()">×</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="interviewId">
+                <div class="form-group">
+                    <label for="interviewCompanyName">企业名称 *</label>
+                    <input type="text" id="interviewCompanyName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="interviewPosition">面试岗位</label>
+                    <input type="text" id="interviewPosition" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="interviewDate">面试时间 *</label>
+                    <input type="datetime-local" id="interviewDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="interviewStatus">面试状态 *</label>
+                    <select id="interviewStatus" class="form-control" required>
+                        <option value="">请选择状态</option>
+                        <option value="一面">一面</option>
+                        <option value="二面">二面</option>
+                        <option value="终面">终面</option>
+                        <option value="HR面">HR面</option>
+                        <option value="等待面试开始">等待面试开始</option>
+                        <option value="面试已结束">面试已结束</option>
+                        <option value="已取消">已取消</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="interviewResult">面试结果</label>
+                    <select id="interviewResult" class="form-control">
+                        <option value="">请选择结果</option>
+                        <option value="等待面试开始">等待面试开始</option>
+                        <option value="通过">通过</option>
+                        <option value="未通过">未通过</option>
+                        <option value="待定">待定</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeInterviewModal()">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveInterview()">保存</button>
             </div>
         </div>
     </div>
@@ -173,6 +276,198 @@
         // 格式化日期显示
         function formatDeliveryDate(dateString) {
             return dateString ? new Date(dateString).toLocaleString('zh-CN') : '';
+        }
+        
+        // 查看邮件正文
+        function viewEmailBody(id) {
+            // 显示正在获取邮件正文的提示消息
+            showMessage('正在获取邮件正文...', 'loading');
+            
+            // 从API获取实时邮件正文
+            fetch(`${API_BASE}/emails/${id}/body/realtime`)
+                .then(response => {
+                    // 检查响应状态
+                    if (response.status === 503) {
+                        // 数据库未初始化，重定向到配置页面
+                        window.location.href = '/config';
+                        return;
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 显示获取成功的消息
+                    showMessage('邮件正文获取成功', 'success');
+                    // 延迟清除消息，让用户看到成功提示
+                    setTimeout(() => {
+                        document.getElementById('message').className = '';
+                        document.getElementById('message').textContent = '';
+                    }, 1000);
+                    showEmailModal(data.body || '无邮件正文内容');
+                })
+                .catch(error => {
+                    console.error('获取邮件正文失败:', error);
+                    showMessage(`获取邮件正文失败: ${error.message}`, 'error');
+                    showEmailModal(`获取邮件正文失败: ${error.message}`);
+                });
+        }
+        
+        // 显示邮件弹窗（简化版，无编辑功能）
+        function showEmailModal(content, isLoading = false) {
+            // 创建弹窗遮罩
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.id = 'emailModal';
+            modal.style.display = 'block'; // 确保弹窗显示
+            
+            // 创建弹窗内容
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            modalContent.id = 'emailModalContent';
+            // 增大弹窗尺寸
+            modalContent.style.maxWidth = '800px';
+            modalContent.style.maxHeight = '90vh';
+            
+            // 创建标题栏（用于拖拽）
+            const titleBar = document.createElement('div');
+            titleBar.className = 'modal-title-bar';
+            
+            // 添加标题文本
+            const titleText = document.createTextNode('邮件正文');
+            titleBar.appendChild(titleText);
+            
+            // 创建关闭按钮
+            const closeBtn = document.createElement('span');
+            closeBtn.className = 'modal-close';
+            closeBtn.innerHTML = '×';
+            closeBtn.onclick = function() {
+                document.body.removeChild(modal);
+            };
+            titleBar.appendChild(closeBtn);
+            
+            // 创建邮件内容容器
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'modal-body';
+            
+            if (isLoading) {
+                contentDiv.innerHTML = `<div class="loading">${content}</div>`;
+            } else {
+                // 检查内容是否为HTML格式
+                if (content && content.trim().startsWith('<')) {
+                    // 如果是HTML内容，直接显示（但要确保安全性）
+                    contentDiv.innerHTML = sanitizeHtml(content);
+                } else {
+                    // 如果是纯文本，转换换行符为<br>标签
+                    contentDiv.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
+                }
+            }
+            
+            // 创建弹窗底部按钮区域
+            const footerDiv = document.createElement('div');
+            footerDiv.className = 'modal-footer';
+            
+            // 添加关闭按钮
+            const closeBtnFooter = document.createElement('button');
+            closeBtnFooter.type = 'button';
+            closeBtnFooter.className = 'btn btn-secondary';
+            closeBtnFooter.textContent = '关闭';
+            closeBtnFooter.onclick = function() {
+                document.body.removeChild(modal);
+            };
+            
+            footerDiv.appendChild(closeBtnFooter);
+            
+            // 组装弹窗
+            modalContent.appendChild(titleBar);
+            modalContent.appendChild(contentDiv);
+            modalContent.appendChild(footerDiv);
+            modal.appendChild(modalContent);
+            
+            // 添加到页面
+            document.body.appendChild(modal);
+            
+            // 添加拖拽功能（优化版）
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+            
+            titleBar.addEventListener('mousedown', dragStart);
+            
+            function dragStart(e) {
+                // 只有点击标题栏时才能拖动
+                if (e.target.classList.contains('modal-title-bar') || e.target.closest('.modal-title-bar')) {
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                    isDragging = true;
+                    // 添加 grabbing 光标样式
+                    titleBar.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            }
+            
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    
+                    const modalContent = document.getElementById('emailModalContent');
+                    modalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
+                }
+            }
+            
+            function dragEnd() {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+                // 恢复默认光标样式
+                titleBar.style.cursor = 'grab';
+            }
+            
+            // 设置默认光标样式
+            titleBar.style.cursor = 'grab';
+            
+            // 添加鼠标事件监听器（只添加一次）
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+            
+            // 返回弹窗元素，以便后续操作
+            return modal;
+        }
+        
+        // HTML转义函数，防止XSS攻击同时正确显示内容
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return unsafe;
+            return unsafe
+                .replace(/&/g, "&")
+                .replace(/</g, "<")
+                .replace(/>/g, ">")
+                .replace(/"/g, '"')
+                .replace(/'/g, "'");
+        }
+        
+        // 简单的HTML净化函数，只允许安全的HTML标签
+        function sanitizeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return escapeHtml(unsafe);
+            
+            // 移除潜在危险的标签和属性
+            return unsafe
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+                .replace(/on\w+="[^"]*"/gi, '')
+                .replace(/on\w+='[^']*'/gi, '')
+                .replace(/on\w+=[^>\s]*/gi, '')
+                .replace(/javascript:/gi, '')
+                .replace(/vbscript:/gi, '');
         }
         
         // 显示消息函数
@@ -344,24 +639,40 @@
             const newRow = table.insertRow();
             newRow.dataset.id = item.id;
             
+            // 为整行添加点击事件，打开面试日程弹窗
+            newRow.addEventListener('click', function(e) {
+                // 如果点击的是按钮，则不触发弹窗
+                if (e.target.tagName === 'BUTTON') {
+                    return;
+                }
+                openInterviewModal(item);
+            });
+            
             // 格式化日期显示
             const formattedDate = formatDeliveryDate(item.delivery_date);
             
             // 创建单元格
-            const idCell = newRow.insertCell(0);
-            const companyCell = newRow.insertCell(1);
-            const positionCell = newRow.insertCell(2);
-            const dateCell = newRow.insertCell(3);
-            const statusCell = newRow.insertCell(4);
+            const companyCell = newRow.insertCell(0);
+            const positionCell = newRow.insertCell(1);
+            const dateCell = newRow.insertCell(2);
+            const statusCell = newRow.insertCell(3);
+            const emailBodyCell = newRow.insertCell(4);
             const notesCell = newRow.insertCell(5);
             const actionCell = newRow.insertCell(6);
             
             // 填充单元格内容
-            idCell.textContent = item.id;
             companyCell.textContent = item.company_name;
             positionCell.textContent = item.position || '';
             dateCell.textContent = formattedDate;
             statusCell.textContent = item.status;
+            
+            // 添加邮件正文按钮（如果有邮件ID）
+            if (item.email_id) {
+                emailBodyCell.innerHTML = '<div class="email-body-cell"><button type="button" class="btn btn-info btn-sm" onclick="viewEmailBody(' + item.email_id + ')">查看正文</button></div>';
+            } else {
+                emailBodyCell.textContent = '';
+            }
+            
             notesCell.innerHTML = '<div class="notes-cell"><button type="button" class="btn btn-secondary btn-sm" onclick="openNotesModal(this)">备注</button></div>';
             
             // 存储备注内容在行元素上
@@ -590,6 +901,142 @@
             currentRow = null;
         }
         
+        // 打开面试日程弹窗
+        function openInterviewModal(deliveryData) {
+            console.log('Opening interview modal with delivery data:', deliveryData);
+            
+            // 填充默认数据
+            document.getElementById('interviewId').value = '';
+            document.getElementById('interviewCompanyName').value = deliveryData.company_name || '';
+            document.getElementById('interviewPosition').value = deliveryData.position || '';
+            
+            // 设置默认面试时间为投递时间
+            let interviewDate = new Date();
+            if (deliveryData.delivery_date) {
+                interviewDate = new Date(deliveryData.delivery_date);
+            }
+            
+            // 确保日期格式正确 (YYYY-MM-DDTHH:mm)
+            const formattedDate = interviewDate.toISOString().slice(0, 16);
+            document.getElementById('interviewDate').value = formattedDate;
+            
+            console.log('Setting interview date to:', formattedDate);
+            
+            document.getElementById('interviewStatus').value = '一面';
+            document.getElementById('interviewResult').value = '等待面试开始';
+            
+            // 显示弹窗
+            document.getElementById('interviewModal').style.display = 'block';
+            
+            // 重置弹窗位置
+            const modalContent = document.getElementById('interviewModalContent');
+            modalContent.style.transform = 'translate(-50%, -50%)';
+            
+            // 验证数据是否正确填充
+            console.log('Interview company name:', document.getElementById('interviewCompanyName').value);
+            console.log('Interview date:', document.getElementById('interviewDate').value);
+        }
+        
+        // 关闭面试日程弹窗
+        function closeInterviewModal() {
+            document.getElementById('interviewModal').style.display = 'none';
+        }
+        
+        // 保存面试日程
+        function saveInterview() {
+            const id = document.getElementById('interviewId').value;
+            const companyName = document.getElementById('interviewCompanyName').value;
+            const position = document.getElementById('interviewPosition').value;
+            const interviewDate = document.getElementById('interviewDate').value;
+            const status = document.getElementById('interviewStatus').value;
+            const result = document.getElementById('interviewResult').value;
+            
+            console.log('Saving interview with data:', {
+                id: id,
+                companyName: companyName,
+                position: position,
+                interviewDate: interviewDate,
+                status: status,
+                result: result
+            });
+            
+            // 验证必填字段
+            if (!companyName || !interviewDate || !status) {
+                showMessage('请填写所有必填字段', 'error');
+                console.log('Validation failed:', {
+                    companyName: !!companyName,
+                    interviewDate: !!interviewDate,
+                    status: !!status
+                });
+                return;
+            }
+            
+            // 构造面试日程数据
+            const interviewData = {
+                company_name: companyName,
+                position: position,
+                interview_date: interviewDate,
+                status: status,
+                result: result
+            };
+            
+            console.log('Sending interview data:', interviewData);
+            
+            let url = `${API_BASE}/interviews`;
+            let method = 'POST';
+            let action = '添加';
+            
+            // 如果有ID，则为更新操作
+            if (id) {
+                url += `/${id}`;
+                method = 'PUT';
+                action = '更新';
+                showMessage(`正在更新面试日程: ${companyName}...`, 'loading');
+            } else {
+                showMessage(`正在添加面试日程: ${companyName}...`, 'loading');
+            }
+            
+            // 发送到后端API
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(interviewData)
+            })
+            .then(response => {
+                console.log('API response status:', response.status);
+                // 检查响应状态
+                if (response.status === 503) {
+                    // 数据库未初始化，重定向到配置页面
+                    window.location.href = '/config';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    return response.json().then(err => { 
+                        console.error('API error response:', err);
+                        throw err; 
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                // 检查是否有结果返回
+                if (!result) return;
+                
+                showMessage(`${action}面试日程成功: ${companyName}`, 'success');
+                closeInterviewModal();
+                // 重新加载数据以反映更改
+                loadData();
+            })
+            .catch(error => {
+                console.error('保存面试日程失败:', error);
+                const errorMsg = error.error || error.message || '保存面试日程失败';
+                showMessage(`${action}面试日程失败: ${errorMsg}`, 'error');
+            });
+        }
+        
         // 保存备注
         function saveNotes() {
             if (currentRow) {
@@ -643,6 +1090,8 @@
                 initialX = e.clientX - xOffset;
                 initialY = e.clientY - yOffset;
                 isDragging = true;
+                // 设置光标样式
+                e.target.style.cursor = 'grabbing';
                 e.preventDefault();
             }
         }
@@ -656,8 +1105,22 @@
                 xOffset = currentX;
                 yOffset = currentY;
                 
-                const modalContent = document.getElementById('notesModalContent');
-                modalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
+                // 更新所有打开的弹窗位置
+                const notesModalContent = document.getElementById('notesModalContent');
+                const interviewModalContent = document.getElementById('interviewModalContent');
+                const emailModalContent = document.getElementById('emailModalContent');
+                
+                if (notesModalContent && notesModalContent.style.display !== 'none') {
+                    notesModalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
+                }
+                
+                if (interviewModalContent && interviewModalContent.style.display !== 'none') {
+                    interviewModalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
+                }
+                
+                if (emailModalContent && emailModalContent.style.display !== 'none') {
+                    emailModalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
+                }
             }
         }
         
@@ -666,6 +1129,8 @@
             initialX = currentX;
             initialY = currentY;
             isDragging = false;
+            // 恢复光标样式
+            document.body.style.cursor = 'default';
         }
         
         // 为弹窗标题栏添加拖动事件监听器
@@ -673,6 +1138,22 @@
             const modalTitleBar = document.querySelector('#notesModal .modal-title-bar');
             if (modalTitleBar) {
                 modalTitleBar.addEventListener('mousedown', dragStart);
+            }
+            
+            // 为面试弹窗标题栏添加拖动事件监听器
+            const interviewModalTitleBar = document.querySelector('#interviewModal .modal-title-bar');
+            if (interviewModalTitleBar) {
+                interviewModalTitleBar.addEventListener('mousedown', function(e) {
+                    // 只有点击标题栏时才能拖动
+                    if (e.target.classList.contains('modal-title-bar') || e.target.closest('.modal-title-bar')) {
+                        initialX = e.clientX - xOffset;
+                        initialY = e.clientY - yOffset;
+                        isDragging = true;
+                        // 添加 grabbing 光标样式
+                        interviewModalTitleBar.style.cursor = 'grabbing';
+                        e.preventDefault();
+                    }
+                });
             }
         });
         
@@ -683,11 +1164,20 @@
         // 点击弹窗外部关闭弹窗 - 已禁用此功能
         /*
         window.onclick = function(event) {
-            const modal = document.getElementById('notesModal');
-            const modalContent = document.getElementById('notesModalContent');
+            const notesModal = document.getElementById('notesModal');
+            const interviewModal = document.getElementById('interviewModal');
+            const emailModal = document.getElementById('emailModal');
+            
             // 检查点击的是否是弹窗遮罩层（而不是弹窗内容）
-            if (event.target === modal) {
+            if (event.target === notesModal) {
                 closeNotesModal();
+            } else if (event.target === interviewModal) {
+                closeInterviewModal();
+            } else if (event.target === emailModal) {
+                // 关闭邮件弹窗的代码需要从已有的邮件弹窗中复制
+                if (document.getElementById('emailModal')) {
+                    document.body.removeChild(document.getElementById('emailModal'));
+                }
             }
         };
         */

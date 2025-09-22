@@ -532,25 +532,25 @@ tr:hover {
 /* 表格列宽定义 */
 /* 企业投递汇总表格列宽 */
 #deliveryTable th:nth-child(1),
-#deliveryTable td:nth-child(1) { width: 10%; } /* ID列 */
+#deliveryTable td:nth-child(1) { width: 25%; } /* 企业名称列 */
 
 #deliveryTable th:nth-child(2),
-#deliveryTable td:nth-child(2) { width: 25%; } /* 企业名称列 */
+#deliveryTable td:nth-child(2) { width: 25%; } /* 投递岗位列 */
 
 #deliveryTable th:nth-child(3),
-#deliveryTable td:nth-child(3) { width: 25%; } /* 投递岗位列 */
+#deliveryTable td:nth-child(3) { width: 15%; } /* 投递时间列 */
 
 #deliveryTable th:nth-child(4),
-#deliveryTable td:nth-child(4) { width: 15%; } /* 投递时间列 */
+#deliveryTable td:nth-child(4) { width: 10%; } /* 投递状态列 */
 
 #deliveryTable th:nth-child(5),
-#deliveryTable td:nth-child(5) { width: 10%; } /* 投递状态列 */
+#deliveryTable td:nth-child(5) { width: 7%; } /* 邮件正文列 */
 
 #deliveryTable th:nth-child(6),
 #deliveryTable td:nth-child(6) { width: 7.5%; } /* 备注列 */
 
 #deliveryTable th:nth-child(7),
-#deliveryTable td:nth-child(7) { width: 7.5%; } /* 操作列 */
+#deliveryTable td:nth-child(7) { width: 10.5%; } /* 操作列 */
 
 /* 面试日程表格列宽 */
 #interviewTable th:nth-child(1),
@@ -664,6 +664,34 @@ td.action-cell {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+}
+
+/* 邮件正文列按钮 */
+.email-body-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.email-body-cell .btn {
+  min-height: 28px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: 0.8125rem;
+  min-width: 60px;
+  background: linear-gradient(135deg, var(--success-color), var(--info-color));
+  border: none;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.email-body-cell .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, var(--info-color), var(--primary-color));
 }
 
 /* 表格文本对齐 */
