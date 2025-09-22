@@ -1126,8 +1126,8 @@
                 
                 showMessage(`${action}面试日程成功: ${companyName}`, 'success');
                 closeInterviewModal();
-                // 重新加载数据以反映更改
-                loadData();
+                // 不再重新加载数据，避免覆盖面试日程添加成功的消息
+                // 如果需要更新特定行的状态，可以考虑只更新那一行
             })
             .catch(error => {
                 console.error('保存面试日程失败:', error);
