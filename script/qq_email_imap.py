@@ -8,6 +8,7 @@ from imapclient import IMAPClient
 import ssl
 import logging
 import io
+import email.utils
 
 # 导入配置模块
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -221,7 +222,21 @@ def fetch_emails(client, start_date=None, end_date=None, email_address=None):
                     # 获取基本信息
                     sender = msg.get('From', '')
                     recipient = msg.get('To', '')
-                    send_date = msg.get('Date', '')
+                    raw_send_date = msg.get('Date', '')
+                    
+                    # 格式化日期为统一格式
+                    send_date = raw_send_date
+                    if raw_send_date:
+                        try:
+                            # 解析邮件头中的日期
+                            parsed_date = email.utils.parsedate_to_datetime(raw_send_date)
+                            if parsed_date:
+                                # 转换为MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS)
+                                send_date = parsed_date.strftime('%Y-%m-%d %H:%M:%S')
+                        except Exception as e:
+                            print(f"解析邮件日期时出错: {e}")
+                            # 如果解析失败，保留原始日期
+                            send_date = raw_send_date
                     
                     # 获取邮件正文
                     body = get_email_body(msg)

@@ -524,61 +524,79 @@
         
         // 查看邮件正文
         function viewEmailBody(id) {
-            // 找到对应的邮件数据
-            const rows = document.querySelectorAll('#emailTable tbody tr');
-            let emailData = null;
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                if (row.dataset.id === String(id)) {
-                    // 从表格行中提取邮件数据
-                    const cells = row.cells;
-                    emailData = {
-                        id: id,
-                        subject: cells[1].textContent,
-                        sender: cells[2].textContent,
-                        send_date: cells[3].textContent
-                    };
-                    break;
-                }
-            }
-            
             // 显示正在获取邮件正文的提示消息
             showMessage('正在获取邮件正文...', 'loading');
             
-            // 从API获取实时邮件正文
-            fetch(`${API_BASE}/emails/${id}/body/realtime`)
-                .then(response => {
-                    // 检查响应状态
-                    if (response.status === 503) {
-                        // 数据库未初始化，重定向到配置页面
-                        window.location.href = '/config';
-                        return;
+            // 从API获取实时邮件正文和准确的邮件数据
+            Promise.all([
+                fetch(`${API_BASE}/emails/${id}/body/realtime`),
+                fetch(`${API_BASE}/emails`) // 获取所有邮件数据以获得准确的时间
+            ])
+            .then(async responses => {
+                const [bodyResponse, emailsResponse] = responses;
+                
+                // 检查响应状态
+                if (bodyResponse.status === 503 || emailsResponse.status === 503) {
+                    // 数据库未初始化，重定向到配置页面
+                    window.location.href = '/config';
+                    return;
+                }
+                
+                if (!bodyResponse.ok) {
+                    throw new Error(`HTTP error! status: ${bodyResponse.status}`);
+                }
+                
+                if (!emailsResponse.ok) {
+                    throw new Error(`HTTP error! status: ${emailsResponse.status}`);
+                }
+                
+                const bodyData = await bodyResponse.json();
+                const emailsData = await emailsResponse.json();
+                
+                // 从完整的邮件数据中找到对应的邮件以获取准确的时间
+                let emailData = emailsData.find(email => email.id == id) || null;
+                
+                // 如果找不到，创建一个基本的邮件数据对象
+                if (!emailData) {
+                    emailData = { id: id };
+                }
+                
+                return { bodyData, emailData };
+            })
+            .then(({ bodyData, emailData }) => {
+                // 显示获取成功的消息
+                showMessage('邮件正文获取成功', 'success');
+                // 延迟清除消息，让用户看到成功提示
+                setTimeout(() => {
+                    document.getElementById('message').className = '';
+                    document.getElementById('message').textContent = '';
+                }, 1000);
+                showEmailModal(bodyData.body || '无邮件正文内容', false, emailData);
+            })
+            .catch(error => {
+                console.error('获取邮件正文失败:', error);
+                showMessage(`获取邮件正文失败: ${error.message}`, 'error');
+                
+                // 即使获取准确数据失败，仍然显示邮件正文（使用表格中的数据）
+                const rows = document.querySelectorAll('#emailTable tbody tr');
+                let emailData = null;
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (row.dataset.id === String(id)) {
+                        // 从表格行中提取邮件数据
+                        const cells = row.cells;
+                        emailData = {
+                            id: id,
+                            subject: cells[1].textContent,
+                            sender: cells[2].textContent,
+                            send_date: cells[3].textContent
+                        };
+                        break;
                     }
-                    
-                    if (response.ok) {
-                        return response.json();
-                    } else {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                })
-                .then(data => {
-                    // 检查是否有数据返回
-                    if (!data) return;
-                    
-                    // 显示获取成功的消息
-                    showMessage('邮件正文获取成功', 'success');
-                    // 延迟清除消息，让用户看到成功提示
-                    setTimeout(() => {
-                        document.getElementById('message').className = '';
-                        document.getElementById('message').textContent = '';
-                    }, 1000);
-                    showEmailModal(data.body || '无邮件正文内容', false, emailData);
-                })
-                .catch(error => {
-                    console.error('获取邮件正文失败:', error);
-                    showMessage(`获取邮件正文失败: ${error.message}`, 'error');
-                    showEmailModal(`获取邮件正文失败: ${error.message}`, false, emailData);
-                });
+                }
+                
+                showEmailModal(`获取邮件正文失败: ${error.message}`, false, emailData);
+            });
         }
         
         // 同步到投递汇总系统（已修改为在邮件正文弹窗中直接编辑）
@@ -794,6 +812,47 @@
                 const suggestedCompanyName = extractCompanyName(emailData.sender, emailData.subject);
                 let suggestedStatus = '投递完成';
                 
+                // 从邮件数据中获取发送时间，并转换为本地时区的datetime-local格式
+                let defaultDeliveryDate = new Date().toISOString().slice(0, 16);
+                if (emailData && emailData.send_date) {
+                    try {
+                        // 将邮件发送时间转换为本地时区的datetime-local格式
+                        // 数据库中的send_date可能是字符串格式，需要正确解析
+                        let sendDate;
+                        if (typeof emailData.send_date === 'string') {
+                            // 尝试不同的日期解析方式
+                            if (emailData.send_date.includes('T')) {
+                                // ISO格式日期
+                                sendDate = new Date(emailData.send_date);
+                            } else if (emailData.send_date.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/)) {
+                                // MySQL DATETIME格式 (YYYY-MM-DD HH:MM)
+                                // 需要添加时区信息，假设数据库存储的是本地时间
+                                const [datePart, timePart] = emailData.send_date.split(' ');
+                                const isoString = `${datePart}T${timePart}`;
+                                sendDate = new Date(isoString);
+                            } else {
+                                // 其他格式，直接尝试解析
+                                sendDate = new Date(emailData.send_date);
+                            }
+                        } else {
+                            // 如果已经是Date对象
+                            sendDate = emailData.send_date;
+                        }
+                        
+                        // 检查日期是否有效
+                        if (!isNaN(sendDate.getTime())) {
+                            // 转换为本地时区的datetime-local格式
+                            // datetime-local需要的是本地时间，而不是UTC时间
+                            const localDate = new Date(sendDate.getTime() - sendDate.getTimezoneOffset() * 60000);
+                            defaultDeliveryDate = localDate.toISOString().slice(0, 16);
+                        }
+                    } catch (e) {
+                        console.error('解析邮件发送时间出错:', e);
+                        // 如果解析失败，使用当前时间
+                        defaultDeliveryDate = new Date().toISOString().slice(0, 16);
+                    }
+                }
+                
                 // 创建企业投递编辑表单
                 deliveryFormDiv.innerHTML = `
                     <div class="form-group">
@@ -806,7 +865,7 @@
                     </div>
                     <div class="form-group">
                         <label for="deliveryDate">投递时间 *</label>
-                        <input type="datetime-local" id="deliveryDate" class="form-control" value="${new Date().toISOString().slice(0, 16)}" required>
+                        <input type="datetime-local" id="deliveryDate" class="form-control" value="${defaultDeliveryDate}" required>
                     </div>
                     <div class="form-group">
                         <label for="status">投递状态 *</label>
@@ -1283,7 +1342,17 @@
             
             try {
                 // 解析原始日期字符串
-                const date = new Date(dateString);
+                let date;
+                if (dateString.includes('T')) {
+                    // ISO格式日期
+                    date = new Date(dateString);
+                } else if (dateString.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/)) {
+                    // MySQL DATETIME格式 (YYYY-MM-DD HH:MM)
+                    date = new Date(dateString.replace(' ', 'T'));
+                } else {
+                    // 其他格式，直接尝试解析
+                    date = new Date(dateString);
+                }
                 
                 // 检查日期是否有效
                 if (isNaN(date.getTime())) {

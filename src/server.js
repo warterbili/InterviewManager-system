@@ -404,8 +404,20 @@ app.get('/api/emails', async (req, res) => {
         }
     
         const [rows] = await emailDb.query('SELECT *, delivered as is_delivered FROM all_emails ORDER BY send_date DESC');
-        logMessage(`成功返回 ${rows.length} 条邮件数据`);
-        res.json(rows);
+        // 处理日期格式，确保前端能正确解析
+        const processedRows = rows.map(row => {
+            // 确保send_date字段是字符串格式
+            let send_date = row.send_date;
+            if (send_date && typeof send_date !== 'string') {
+                send_date = send_date.toString();
+            }
+            return {
+                ...row,
+                send_date: send_date
+            };
+        });
+        logMessage(`成功返回 ${processedRows.length} 条邮件数据`);
+        res.json(processedRows);
     } catch (err) {
         logMessage(`获取邮件数据失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '获取邮件数据失败' });
@@ -434,7 +446,20 @@ app.get('/api/emails/search', async (req, res) => {
             logMessage(`搜索关键词 "${keyword}"，返回 ${rows.length} 条匹配记录`);
         }
     
-        res.json(rows);
+        // 处理日期格式，确保前端能正确解析
+        const processedRows = rows.map(row => {
+            // 确保send_date字段是字符串格式
+            let send_date = row.send_date;
+            if (send_date && typeof send_date !== 'string') {
+                send_date = send_date.toString();
+            }
+            return {
+                ...row,
+                send_date: send_date
+            };
+        });
+    
+        res.json(processedRows);
     } catch (err) {
         logMessage(`搜索邮件数据失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '搜索邮件数据失败' });
