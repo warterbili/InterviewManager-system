@@ -413,13 +413,17 @@
                             cell2.innerHTML = `<span style="color: #28a745; font-weight: bold;">[已投递] </span>${email.subject || '无主题'}`;
                         }
                         
-                        // 添加投递状态开关
-                        const toggleButton = document.createElement('button');
-                        toggleButton.className = `btn ${email.is_delivered ? 'btn-success' : 'btn-secondary'} btn-sm`;
-                        toggleButton.textContent = email.is_delivered ? '已投递' : '未投递';
-                        toggleButton.onclick = () => toggleDeliveryStatus(email.id, !email.is_delivered, row);
+                        // 显示投递状态文本（只读）
+                        const statusText = document.createElement('span');
+                        statusText.textContent = email.is_delivered ? '已投递' : '未投递';
+                        statusText.style.fontWeight = 'bold';
+                        if (email.is_delivered) {
+                            statusText.style.color = '#28a745'; // 绿色
+                        } else {
+                            statusText.style.color = '#6c757d'; // 灰色
+                        }
                         
-                        cell5.appendChild(toggleButton);
+                        cell5.appendChild(statusText);
                         
                         // 添加操作按钮
                         cell6.innerHTML = `
@@ -656,7 +660,8 @@
                 company_name: companyName,
                 position: position,
                 delivery_date: deliveryDate,
-                status: status
+                status: status,
+                email_id: emailData ? emailData.id : null
             };
             
             // 发送到投递汇总系统API
@@ -1127,47 +1132,7 @@
             }
         }
         
-        // 切换邮件投递状态
-        function toggleDeliveryStatus(emailId, newStatus, rowElement) {
-            // 显示正在更新的消息
-            showMessage(`${newStatus ? '标记为已投递' : '标记为未投递'}...`, 'loading');
-            
-            // 发送到后端API更新状态
-            fetch(`${API_BASE}/emails/${emailId}/delivered`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ delivered: newStatus })
-            })
-            .then(response => {
-                // 检查响应状态
-                if (response.status === 503) {
-                    // 数据库未初始化，重定向到配置页面
-                    window.location.href = '/config';
-                    return;
-                }
-                
-                if (response.ok) {
-                    return response.json();
-                } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-            })
-            .then(result => {
-                // 检查是否有结果返回
-                if (!result) return;
-                
-                showMessage(`${newStatus ? '已标记为已投递' : '已标记为未投递'}`, 'success');
-                
-                // 重新加载数据以显示更新后的状态
-                loadData();
-            })
-            .catch(error => {
-                console.error('更新邮件投递状态失败:', error);
-                showMessage(`更新失败: ${error.message}`, 'error');
-            });
-        }
+        
         
         // 保存投递记录
         function saveDeliveryRecord(emailData, emailModal) {
@@ -1190,7 +1155,8 @@
                 company_name: companyName,
                 position: position,
                 delivery_date: deliveryDate,
-                status: status
+                status: status,
+                email_id: emailData ? emailData.id : null
             };
             
             // 发送到投递汇总系统API

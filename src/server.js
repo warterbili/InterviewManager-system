@@ -152,6 +152,7 @@ async function initDatabase() {
         delivery_date DATETIME NOT NULL,
         status VARCHAR(100) NOT NULL,
         notes TEXT,
+        email_id INT DEFAULT NULL,
         UNIQUE KEY unique_delivery (company_name, delivery_date, status)
       )
     `);
@@ -692,14 +693,15 @@ app.get('/api/deliveries', async (req, res) => {
             position: row.position || '',
             delivery_date: row.delivery_date,
             status: row.status,
-            notes: row.notes || ''
+            notes: row.notes || '',
+            email_id: row.email_id
         }));
         res.json(data);
     } catch (err) {
         // console.error('获取投递数据失败:', err);
         res.status(500).json({ error: '获取投递数据失败' });
     }
-});
+});;
 
 app.post('/api/deliveries', async (req, res) => {
     try {
@@ -707,7 +709,7 @@ app.post('/api/deliveries', async (req, res) => {
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
-        const { company_name, position, delivery_date, status } = req.body;
+        const { company_name, position, delivery_date, status, email_id } = req.body;
     
         // 检查必填字段
         if (!company_name || !delivery_date || !status) {
@@ -716,8 +718,8 @@ app.post('/api/deliveries', async (req, res) => {
     
         // 插入数据
         const [result] = await deliveryDb.query(
-            'INSERT INTO deliveries (company_name, position, delivery_date, status) VALUES (?, ?, ?, ?)',
-            [company_name, position || '', delivery_date, status]
+            'INSERT INTO deliveries (company_name, position, delivery_date, status, email_id) VALUES (?, ?, ?, ?, ?)',
+            [company_name, position || '', delivery_date, status, email_id || null]
         );
     
         res.json({ message: '投递记录添加成功', id: result.insertId });
@@ -738,7 +740,7 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
     
         const { id } = req.params;
-        const { company_name, position, delivery_date, status, notes } = req.body;
+        const { company_name, position, delivery_date, status, notes, email_id } = req.body;
     
         if (!/^[0-9]+$/.test(id)) {
             return res.status(400).json({ error: '无效的投递ID' });
@@ -749,8 +751,8 @@ app.put('/api/deliveries/:id', async (req, res) => {
         }
     
         const [result] = await deliveryDb.query(
-            'UPDATE deliveries SET company_name = ?, position = ?, delivery_date = ?, status = ?, notes = ? WHERE id = ?',
-            [company_name, position || '', delivery_date, status, notes || '', id]
+            'UPDATE deliveries SET company_name = ?, position = ?, delivery_date = ?, status = ?, notes = ?, email_id = ? WHERE id = ?',
+            [company_name, position || '', delivery_date, status, notes || '', email_id || null, id]
         );
     
         if (result.affectedRows === 0) {
@@ -777,15 +779,36 @@ app.delete('/api/deliveries/:id', async (req, res) => {
         if (!/^[0-9]+$/.test(id)) {
             return res.status(400).json({ error: '无效的投递ID' });
         }
+        
+        // 先查询要删除的记录是否有关联的邮件ID
+        const [rows] = await deliveryDb.query('SELECT email_id FROM deliveries WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: '投递记录未找到' });
+        }
+        
+        const emailId = rows[0].email_id;
+        logMessage(`删除投递记录 ${id}，关联的邮件ID: ${emailId}`);
+        
+        // 如果有关联的邮件ID，则更新邮件状态为未投递
+        if (emailId) {
+            if (emailDb) {
+                const [emailResult] = await emailDb.query('UPDATE all_emails SET delivered = FALSE WHERE id = ?', [emailId]);
+                logMessage(`更新邮件 ${emailId} 状态为未投递，影响行数: ${emailResult.affectedRows}`);
+            } else {
+                logMessage('邮件数据库连接未初始化，无法更新邮件状态', 'WARN');
+            }
+        }
     
+        // 删除投递记录
         const [result] = await deliveryDb.query('DELETE FROM deliveries WHERE id = ?', [id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: '投递记录未找到' });
         }
-    
+        
+        logMessage(`投递记录 ${id} 删除成功`);
         res.json({ message: '投递记录删除成功' });
     } catch (err) {
-        // console.error('删除投递记录失败:', err);
+        logMessage(`删除投递记录失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '删除投递记录失败' });
     }
 });
