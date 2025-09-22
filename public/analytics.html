@@ -305,9 +305,12 @@
                 // 未通过对应数据的已挂状态
                 } else if (item.completion === '已挂') {
                     resultData['未通过']++;
-                // 未完成对应等待面试状态
-                } else if (item.completion === '等待面试') {
+                // 未完成对应等待面试开始状态
+                } else if (item.completion === '等待面试开始') {
                     resultData['未完成']++;
+                // 未知对应等待面试结果和未知状态
+                } else if (item.completion === '等待面试结果' || item.completion === '未知') {
+                    resultData['未知']++;
                 // 剩下的所有其他情况都归类为未知
                 } else {
                     resultData['未知']++;
@@ -414,9 +417,12 @@
                     // 未通过对应数据的已挂状态
                     } else if (item.completion === '已挂') {
                         roundResultData[round]['未通过']++;
-                    // 未完成对应等待面试状态
-                    } else if (item.completion === '等待面试') {
+                    // 未完成对应等待面试开始状态
+                    } else if (item.completion === '等待面试开始') {
                         roundResultData[round]['未完成']++;
+                    // 未知对应等待面试结果和未知状态
+                    } else if (item.completion === '等待面试结果' || item.completion === '未知') {
+                        roundResultData[round]['未知']++;
                     // 剩下的所有其他情况都归类为未知
                     } else {
                         roundResultData[round]['未知']++;
