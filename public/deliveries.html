@@ -73,13 +73,27 @@
         #deliveryTable td:nth-child(5) { width: 10%; } /* 投递状态列 */
         
         #deliveryTable th:nth-child(6),
-        #deliveryTable td:nth-child(6) { width: 10%; } /* 邮件正文列 */
+        #deliveryTable td:nth-child(6) { width: 6%; } /* 邮件正文列 */
         
         #deliveryTable th:nth-child(7),
-        #deliveryTable td:nth-child(7) { width: 10%; } /* 备注列 */
+        #deliveryTable td:nth-child(7) { width: 6%; } /* 备注列 */
         
         #deliveryTable th:nth-child(8),
-        #deliveryTable td:nth-child(8) { width: 12%; } /* 操作列 */
+        #deliveryTable td:nth-child(8) { width: 7.5%; } /* 操作列 */
+        
+        /* 备注按钮样式区分 */
+        .notes-cell .btn-with-notes {
+            background: linear-gradient(135deg, #28a745, #218838) !important; /* 绿色背景 */
+            border: none !important;
+            color: white !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .notes-cell .btn-with-notes:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34) !important; /* 深一点的绿色 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+            transform: translateY(-2px) !important;
+        }
     </style>
 </head>
 <body>
@@ -733,10 +747,12 @@
                 emailBodyCell.textContent = '';
             }
             
-            notesCell.innerHTML = '<div class="notes-cell"><button type="button" class="btn btn-secondary btn-sm" onclick="openNotesModal(this)">备注</button></div>';
-            
             // 存储备注内容在行元素上
             newRow.notes = item.notes || '';
+            
+            // 根据是否有备注内容设置不同的按钮样式
+            const notesButtonClass = item.notes ? 'btn btn-secondary btn-sm btn-with-notes' : 'btn btn-secondary btn-sm';
+            notesCell.innerHTML = `<div class="notes-cell"><button type="button" class="${notesButtonClass}" onclick="openNotesModal(this)">备注</button></div>`;
             
             // 创建操作按钮
             const editBtn = document.createElement('button');
@@ -1171,6 +1187,14 @@
                 // 更新前端显示
                 currentRow.notes = notes;
                 showMessage('备注保存成功', 'success');
+                
+                // 更新备注按钮样式
+                const notesButton = currentRow.querySelector('.notes-cell button');
+                if (notes) {
+                    notesButton.classList.add('btn-with-notes');
+                } else {
+                    notesButton.classList.remove('btn-with-notes');
+                }
                 
                 // 如果有ID，则直接更新数据库中的备注
                 if (id) {
