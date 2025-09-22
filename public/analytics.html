@@ -244,7 +244,32 @@
             const timeData = {};
             data.forEach(item => {
                 if (item.datetime) {
-                    const date = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    // 统一使用MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS) 提取日期部分
+                    let date;
+                    if (typeof item.datetime === 'string' && item.datetime.includes(' ')) {
+                        // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                        date = item.datetime.substring(0, 10);
+                    } else if (typeof item.datetime === 'string' && item.datetime.includes('T')) {
+                        // ISO格式日期，转换为本地日期
+                        const dateObj = new Date(item.datetime);
+                        // 使用本地时区而不是UTC
+                        date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    } else if (typeof item.datetime === 'string') {
+                        // 已经是YYYY-MM-DD格式或其它格式
+                        date = item.datetime.length === 10 ? item.datetime : item.datetime.substring(0, 10);
+                    } else if (item.datetime instanceof Date) {
+                        // Date对象，转换为本地日期
+                        date = `${item.datetime.getFullYear()}-${String(item.datetime.getMonth() + 1).padStart(2, '0')}-${String(item.datetime.getDate()).padStart(2, '0')}`;
+                    } else {
+                        // 其它情况，尝试转换为Date对象
+                        const dateObj = new Date(item.datetime);
+                        if (!isNaN(dateObj.getTime())) {
+                            date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 无法解析，跳过这个记录
+                            return;
+                        }
+                    }
                     timeData[date] = (timeData[date] || 0) + 1;
                 }
             });
@@ -490,7 +515,32 @@
             const successTrendData = {};
             data.forEach(item => {
                 if (item.datetime && item.completion) {
-                    const date = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    // 统一使用MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS) 提取日期部分
+                    let date;
+                    if (typeof item.datetime === 'string' && item.datetime.includes(' ')) {
+                        // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                        date = item.datetime.substring(0, 10);
+                    } else if (typeof item.datetime === 'string' && item.datetime.includes('T')) {
+                        // ISO格式日期，转换为本地日期
+                        const dateObj = new Date(item.datetime);
+                        // 使用本地时区而不是UTC
+                        date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    } else if (typeof item.datetime === 'string') {
+                        // 已经是YYYY-MM-DD格式或其它格式
+                        date = item.datetime.length === 10 ? item.datetime : item.datetime.substring(0, 10);
+                    } else if (item.datetime instanceof Date) {
+                        // Date对象，转换为本地日期
+                        date = `${item.datetime.getFullYear()}-${String(item.datetime.getMonth() + 1).padStart(2, '0')}-${String(item.datetime.getDate()).padStart(2, '0')}`;
+                    } else {
+                        // 其它情况，尝试转换为Date对象
+                        const dateObj = new Date(item.datetime);
+                        if (!isNaN(dateObj.getTime())) {
+                            date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 无法解析，跳过这个记录
+                            return;
+                        }
+                    }
                     if (!successTrendData[date]) {
                         successTrendData[date] = { total: 0, success: 0 };
                     }
@@ -556,7 +606,32 @@
                     // 统计面试数据
                     data.forEach(item => {
                         if (item.datetime) {
-                            const date = item.datetime.substring(0, 10); // YYYY-MM-DD
+                            // 统一使用MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS) 提取日期部分
+                            let date;
+                            if (typeof item.datetime === 'string' && item.datetime.includes(' ')) {
+                                // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                                date = item.datetime.substring(0, 10);
+                            } else if (typeof item.datetime === 'string' && item.datetime.includes('T')) {
+                                // ISO格式日期，转换为本地日期
+                                const dateObj = new Date(item.datetime);
+                                // 使用本地时区而不是UTC
+                                date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else if (typeof item.datetime === 'string') {
+                                // 已经是YYYY-MM-DD格式或其它格式
+                                date = item.datetime.length === 10 ? item.datetime : item.datetime.substring(0, 10);
+                            } else if (item.datetime instanceof Date) {
+                                // Date对象，转换为本地日期
+                                date = `${item.datetime.getFullYear()}-${String(item.datetime.getMonth() + 1).padStart(2, '0')}-${String(item.datetime.getDate()).padStart(2, '0')}`;
+                            } else {
+                                // 其它情况，尝试转换为Date对象
+                                const dateObj = new Date(item.datetime);
+                                if (!isNaN(dateObj.getTime())) {
+                                    date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                                } else {
+                                    // 无法解析，跳过这个记录
+                                    return;
+                                }
+                            }
                             interviewCountByDate[date] = (interviewCountByDate[date] || 0) + 1;
                         }
                     });
@@ -564,7 +639,34 @@
                     // 统计投递数据
                     deliveryData.forEach(item => {
                         if (item.delivery_date) {
-                            const date = item.delivery_date.substring(0, 10); // YYYY-MM-DD
+                            // 确保日期被正确格式化为YYYY-MM-DD
+                            let date;
+                            if (typeof item.delivery_date === 'string') {
+                                // 如果是字符串，检查是否是ISO格式
+                                if (item.delivery_date.includes('T')) {
+                                    // ISO格式日期，需要转换
+                                    const dateObj = new Date(item.delivery_date);
+                                    date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                                } else if (item.delivery_date.includes(' ')) {
+                                    // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)
+                                    date = item.delivery_date.substring(0, 10);
+                                } else {
+                                    // 已经是YYYY-MM-DD格式
+                                    date = item.delivery_date;
+                                }
+                            } else if (item.delivery_date instanceof Date) {
+                                // 如果是Date对象
+                                date = `${item.delivery_date.getFullYear()}-${String(item.delivery_date.getMonth() + 1).padStart(2, '0')}-${String(item.delivery_date.getDate()).padStart(2, '0')}`;
+                            } else {
+                                // 其他情况，尝试转换为Date对象
+                                const dateObj = new Date(item.delivery_date);
+                                if (!isNaN(dateObj.getTime())) {
+                                    date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                                } else {
+                                    // 无法解析，跳过这个记录
+                                    return;
+                                }
+                            }
                             deliveryCountByDate[date] = (deliveryCountByDate[date] || 0) + 1;
                         }
                     });
@@ -575,8 +677,8 @@
                         ...Object.keys(deliveryCountByDate)
                     ]);
                     
-                    // 获取最近30天的数据用于显示
-                    const correlationDates = Array.from(allCorrelationDates).sort();
+                    // 获取最近30天的数据用于显示（按日期正确排序）
+                    const correlationDates = Array.from(allCorrelationDates).sort((a, b) => new Date(a) - new Date(b));
                     const correlationRecentDates = correlationDates.slice(-30); // 只取最近30天
                     const interviewCounts = correlationRecentDates.map(date => interviewCountByDate[date] || 0);
                     const deliveryCounts = correlationRecentDates.map(date => deliveryCountByDate[date] || 0);
@@ -681,7 +783,32 @@
             const interviewsByDate = {};
             data.forEach(item => {
                 if (item.datetime) {
-                    const dateKey = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    // 统一使用MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS) 提取日期部分
+                    let dateKey;
+                    if (typeof item.datetime === 'string' && item.datetime.includes(' ')) {
+                        // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                        dateKey = item.datetime.substring(0, 10);
+                    } else if (typeof item.datetime === 'string' && item.datetime.includes('T')) {
+                        // ISO格式日期，转换为本地日期
+                        const dateObj = new Date(item.datetime);
+                        // 使用本地时区而不是UTC
+                        dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    } else if (typeof item.datetime === 'string') {
+                        // 已经是YYYY-MM-DD格式或其它格式
+                        dateKey = item.datetime.length === 10 ? item.datetime : item.datetime.substring(0, 10);
+                    } else if (item.datetime instanceof Date) {
+                        // Date对象，转换为本地日期
+                        dateKey = `${item.datetime.getFullYear()}-${String(item.datetime.getMonth() + 1).padStart(2, '0')}-${String(item.datetime.getDate()).padStart(2, '0')}`;
+                    } else {
+                        // 其它情况，尝试转换为Date对象
+                        const dateObj = new Date(item.datetime);
+                        if (!isNaN(dateObj.getTime())) {
+                            dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 无法解析，跳过这个记录
+                            return;
+                        }
+                    }
                     if (!interviewsByDate[dateKey]) {
                         interviewsByDate[dateKey] = [];
                     }
@@ -738,7 +865,32 @@
             const interviewsByDate = {};
             data.forEach(item => {
                 if (item.datetime) {
-                    const dateKey = item.datetime.substring(0, 10); // YYYY-MM-DD
+                    // 统一使用MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS) 提取日期部分
+                    let dateKey;
+                    if (typeof item.datetime === 'string' && item.datetime.includes(' ')) {
+                        // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                        dateKey = item.datetime.substring(0, 10);
+                    } else if (typeof item.datetime === 'string' && item.datetime.includes('T')) {
+                        // ISO格式日期，转换为本地日期
+                        const dateObj = new Date(item.datetime);
+                        // 使用本地时区而不是UTC
+                        dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    } else if (typeof item.datetime === 'string') {
+                        // 已经是YYYY-MM-DD格式或其它格式
+                        dateKey = item.datetime.length === 10 ? item.datetime : item.datetime.substring(0, 10);
+                    } else if (item.datetime instanceof Date) {
+                        // Date对象，转换为本地日期
+                        dateKey = `${item.datetime.getFullYear()}-${String(item.datetime.getMonth() + 1).padStart(2, '0')}-${String(item.datetime.getDate()).padStart(2, '0')}`;
+                    } else {
+                        // 其它情况，尝试转换为Date对象
+                        const dateObj = new Date(item.datetime);
+                        if (!isNaN(dateObj.getTime())) {
+                            dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 无法解析，跳过这个记录
+                            return;
+                        }
+                    }
                     if (!interviewsByDate[dateKey]) {
                         interviewsByDate[dateKey] = [];
                     }
@@ -877,13 +1029,38 @@
             const trendData = {};
             data.forEach(item => {
                 if (item.delivery_date) {
-                    const date = item.delivery_date.substring(0, 10); // YYYY-MM-DD
+                    // 统一使用MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS) 提取日期部分
+                    let date;
+                    if (typeof item.delivery_date === 'string' && item.delivery_date.includes(' ')) {
+                        // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                        date = item.delivery_date.substring(0, 10);
+                    } else if (typeof item.delivery_date === 'string' && item.delivery_date.includes('T')) {
+                        // ISO格式日期，转换为本地日期
+                        const dateObj = new Date(item.delivery_date);
+                        // 使用本地时区而不是UTC
+                        date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    } else if (typeof item.delivery_date === 'string') {
+                        // 已经是YYYY-MM-DD格式或其它格式
+                        date = item.delivery_date.length === 10 ? item.delivery_date : item.delivery_date.substring(0, 10);
+                    } else if (item.delivery_date instanceof Date) {
+                        // Date对象，转换为本地日期
+                        date = `${item.delivery_date.getFullYear()}-${String(item.delivery_date.getMonth() + 1).padStart(2, '0')}-${String(item.delivery_date.getDate()).padStart(2, '0')}`;
+                    } else {
+                        // 其它情况，尝试转换为Date对象
+                        const dateObj = new Date(item.delivery_date);
+                        if (!isNaN(dateObj.getTime())) {
+                            date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 无法解析，跳过这个记录
+                            return;
+                        }
+                    }
                     trendData[date] = (trendData[date] || 0) + 1;
                 }
             });
             
-            // 获取最近30天的数据用于显示
-            const deliveryDates = Object.keys(trendData).sort();
+            // 获取最近30天的数据用于显示（按日期正确排序）
+            const deliveryDates = Object.keys(trendData).sort((a, b) => new Date(a) - new Date(b));
             const deliveryRecentDates = deliveryDates.slice(-30); // 只取最近30天
             const trendValues = deliveryRecentDates.map(date => trendData[date]);
             
@@ -1051,21 +1228,44 @@
             const emailTrendData = {};
             data.forEach(item => {
                 if (item.send_date) {
-                    // 解析RFC 2822格式的日期字符串
-                    const dateObj = new Date(item.send_date);
-                    if (!isNaN(dateObj.getTime())) {
-                        // 格式化为YYYY-MM-DD（使用本地时间而非UTC时间）
-                        const year = dateObj.getFullYear();
-                        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                        const day = String(dateObj.getDate()).padStart(2, '0');
-                        const date = `${year}-${month}-${day}`;
-                        emailTrendData[date] = (emailTrendData[date] || 0) + 1;
+                    // 统一使用MySQL DATETIME格式处理
+                    let date;
+                    if (typeof item.send_date === 'string' && item.send_date.includes(' ')) {
+                        // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                        date = item.send_date.substring(0, 10);
+                    } else if (typeof item.send_date === 'string' && item.send_date.includes('T')) {
+                        // ISO格式日期，转换为本地日期
+                        const dateObj = new Date(item.send_date);
+                        // 使用本地时区而不是UTC
+                        date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                    } else if (typeof item.send_date === 'string') {
+                        // RFC 2822格式或其它格式，尝试解析
+                        const dateObj = new Date(item.send_date);
+                        if (!isNaN(dateObj.getTime())) {
+                            date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 无法解析，跳过这个记录
+                            return;
+                        }
+                    } else if (item.send_date instanceof Date) {
+                        // Date对象，转换为本地日期
+                        date = `${item.send_date.getFullYear()}-${String(item.send_date.getMonth() + 1).padStart(2, '0')}-${String(item.send_date.getDate()).padStart(2, '0')}`;
+                    } else {
+                        // 其它情况，尝试转换为Date对象
+                        const dateObj = new Date(item.send_date);
+                        if (!isNaN(dateObj.getTime())) {
+                            date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 无法解析，跳过这个记录
+                            return;
+                        }
                     }
+                    emailTrendData[date] = (emailTrendData[date] || 0) + 1;
                 }
             });
             
-            // 获取最近30天的数据用于显示
-            const emailDates = Object.keys(emailTrendData).sort();
+            // 获取最近30天的数据用于显示（按日期正确排序）
+            const emailDates = Object.keys(emailTrendData).sort((a, b) => new Date(a) - new Date(b));
             const emailRecentDates = emailDates.slice(-30); // 只取最近30天
             const emailTrendValues = emailRecentDates.map(date => emailTrendData[date]);
             
@@ -1126,23 +1326,71 @@
                 // 统计邮件数据
                 data.forEach(item => {
                     if (item.send_date) {
-                        // 解析RFC 2822格式的日期字符串
-                        const dateObj = new Date(item.send_date);
-                        if (!isNaN(dateObj.getTime())) {
-                            // 格式化为YYYY-MM-DD（使用本地时间而非UTC时间）
-                            const year = dateObj.getFullYear();
-                            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                            const day = String(dateObj.getDate()).padStart(2, '0');
-                            const date = `${year}-${month}-${day}`;
-                            emailCountByDate[date] = (emailCountByDate[date] || 0) + 1;
+                        // 统一使用MySQL DATETIME格式处理
+                        let date;
+                        if (typeof item.send_date === 'string' && item.send_date.includes(' ')) {
+                            // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                            date = item.send_date.substring(0, 10);
+                        } else if (typeof item.send_date === 'string' && item.send_date.includes('T')) {
+                            // ISO格式日期，转换为本地日期
+                            const dateObj = new Date(item.send_date);
+                            // 使用本地时区而不是UTC
+                            date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else if (typeof item.send_date === 'string') {
+                            // RFC 2822格式或其它格式，尝试解析
+                            const dateObj = new Date(item.send_date);
+                            if (!isNaN(dateObj.getTime())) {
+                                date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else {
+                                // 无法解析，跳过这个记录
+                                return;
+                            }
+                        } else if (item.send_date instanceof Date) {
+                            // Date对象，转换为本地日期
+                            date = `${item.send_date.getFullYear()}-${String(item.send_date.getMonth() + 1).padStart(2, '0')}-${String(item.send_date.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 其它情况，尝试转换为Date对象
+                            const dateObj = new Date(item.send_date);
+                            if (!isNaN(dateObj.getTime())) {
+                                date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else {
+                                // 无法解析，跳过这个记录
+                                return;
+                            }
                         }
+                        emailCountByDate[date] = (emailCountByDate[date] || 0) + 1;
                     }
                 });
                 
                 // 统计面试数据
                 interviewData.forEach(item => {
                     if (item.datetime) {
-                        const date = item.datetime.substring(0, 10); // YYYY-MM-DD
+                        // 统一使用MySQL DATETIME格式 (YYYY-MM-DD HH:MM:SS) 提取日期部分
+                        let date;
+                        if (typeof item.datetime === 'string' && item.datetime.includes(' ')) {
+                            // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)，提取日期部分
+                            date = item.datetime.substring(0, 10);
+                        } else if (typeof item.datetime === 'string' && item.datetime.includes('T')) {
+                            // ISO格式日期，转换为本地日期
+                            const dateObj = new Date(item.datetime);
+                            // 使用本地时区而不是UTC
+                            date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                        } else if (typeof item.datetime === 'string') {
+                            // 已经是YYYY-MM-DD格式或其它格式
+                            date = item.datetime.length === 10 ? item.datetime : item.datetime.substring(0, 10);
+                        } else if (item.datetime instanceof Date) {
+                            // Date对象，转换为本地日期
+                            date = `${item.datetime.getFullYear()}-${String(item.datetime.getMonth() + 1).padStart(2, '0')}-${String(item.datetime.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 其它情况，尝试转换为Date对象
+                            const dateObj = new Date(item.datetime);
+                            if (!isNaN(dateObj.getTime())) {
+                                date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else {
+                                // 无法解析，跳过这个记录
+                                return;
+                            }
+                        }
                         interviewCountByDate[date] = (interviewCountByDate[date] || 0) + 1;
                     }
                 });
@@ -1150,7 +1398,34 @@
                 // 统计投递数据
                 deliveryData.forEach(item => {
                     if (item.delivery_date) {
-                        const date = item.delivery_date.substring(0, 10); // YYYY-MM-DD
+                        // 确保日期被正确格式化为YYYY-MM-DD
+                        let date;
+                        if (typeof item.delivery_date === 'string') {
+                            // 如果是字符串，检查是否是ISO格式
+                            if (item.delivery_date.includes('T')) {
+                                // ISO格式日期，需要转换
+                                const dateObj = new Date(item.delivery_date);
+                                date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else if (item.delivery_date.includes(' ')) {
+                                // MySQL格式日期 (YYYY-MM-DD HH:mm:ss)
+                                date = item.delivery_date.substring(0, 10);
+                            } else {
+                                // 已经是YYYY-MM-DD格式
+                                date = item.delivery_date;
+                            }
+                        } else if (item.delivery_date instanceof Date) {
+                            // 如果是Date对象
+                            date = `${item.delivery_date.getFullYear()}-${String(item.delivery_date.getMonth() + 1).padStart(2, '0')}-${String(item.delivery_date.getDate()).padStart(2, '0')}`;
+                        } else {
+                            // 其他情况，尝试转换为Date对象
+                            const dateObj = new Date(item.delivery_date);
+                            if (!isNaN(dateObj.getTime())) {
+                                date = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+                            } else {
+                                // 无法解析，跳过这个记录
+                                return;
+                            }
+                        }
                         deliveryCountByDate[date] = (deliveryCountByDate[date] || 0) + 1;
                     }
                 });
@@ -1162,8 +1437,8 @@
                     ...Object.keys(deliveryCountByDate)
                 ]);
                 
-                // 获取最近30天的数据用于显示
-                const correlationDates = Array.from(allCorrelationDates).sort();
+                // 获取最近30天的数据用于显示（按日期正确排序）
+                const correlationDates = Array.from(allCorrelationDates).sort((a, b) => new Date(a) - new Date(b));
                 const correlationRecentDates = correlationDates.slice(-30); // 只取最近30天
                 const emailCounts = correlationRecentDates.map(date => emailCountByDate[date] || 0);
                 const interviewCounts = correlationRecentDates.map(date => interviewCountByDate[date] || 0);
