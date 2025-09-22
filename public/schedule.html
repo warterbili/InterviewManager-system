@@ -348,6 +348,9 @@
             const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
             const newRow = table.insertRow();
             
+            // 添加data-id属性用于删除操作
+            newRow.setAttribute('data-id', item.id);
+            
             // 格式化日期显示
             const formattedDate = formatInterviewDate(item.datetime);
             
@@ -376,13 +379,13 @@
             editBtn.type = 'button';
             editBtn.className = 'btn btn-warning btn-sm';
             editBtn.textContent = '编辑';
-            editBtn.onclick = () => editRecord(item.company, item.position, item.datetime, item.preparation, item.completion);
+            editBtn.onclick = () => editRecord(item.id, item.company, item.position, item.datetime, item.preparation, item.completion);
             
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
             deleteBtn.className = 'btn btn-danger btn-sm';
             deleteBtn.textContent = '删除';
-            deleteBtn.onclick = () => deleteRecord(item.company, item.position, item.datetime);
+            deleteBtn.onclick = () => deleteRecord(item.id);
             
             // 添加按钮到操作单元格
             const actionDiv = document.createElement('div');
@@ -455,12 +458,12 @@
         }
         
         // 编辑记录
-        function editRecord(company, position, interviewDate, preparation, completion) {
+        function editRecord(id, company, position, interviewDate, preparation, completion) {
             // 设置表单标题
             document.getElementById('form-title').textContent = '编辑面试记录';
             
             // 填充表单数据
-            document.getElementById('recordId').value = 'editing'; // 标记为编辑模式
+            document.getElementById('recordId').value = id;
             document.getElementById('companyName').value = company;
             document.getElementById('position').value = position || '';
             document.getElementById('interviewDate').value = interviewDate ? interviewDate.slice(0, 16) : '';
@@ -489,6 +492,7 @@
         
         // 保存记录（添加或更新）
         function saveRecord() {
+            const recordId = document.getElementById('recordId').value;
             const company = document.getElementById('companyName').value;
             const position = document.getElementById('position').value;
             const interviewDate = document.getElementById('interviewDate').value;
@@ -501,36 +505,41 @@
                 return;
             }
             
-            // 获取当前行的备注内容（如果是编辑模式）
-            let notes = '';
-            const recordId = document.getElementById('recordId').value;
-            if (recordId) {
-                // 在编辑模式下，查找当前行以获取备注
-                const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
-                for (let i = 0; i < table.rows.length; i++) {
-                    const row = table.rows[i];
-                    // 检查是否是正在编辑的行
-                    if (row.cells[0].textContent === company && 
-                        row.cells[1].textContent === (position || '') && 
-                        row.cells[2].textContent === formatInterviewDate(interviewDate)) {
-                        notes = row.notes || '';
-                        break;
-                    }
-                }
-            }
-            
             const recordData = {
                 company: company,
                 position: position,
                 datetime: interviewDate,
                 preparation: preparation,
                 completion: completion,
-                notes: notes
+                notes: '' // 默认备注为空
             };
             
+            // 如果是编辑模式，获取备注内容
+            if (recordId) {
+                // 在编辑模式下，查找当前行以获取备注
+                const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+                for (let i = 0; i < table.rows.length; i++) {
+                    const row = table.rows[i];
+                    // 检查是否是正在编辑的行
+                    if (row.getAttribute('data-id') == recordId) {
+                        recordData.notes = row.notes || '';
+                        break;
+                    }
+                }
+            }
+            
+            let url = `${API_BASE}/interviews`;
+            let method = 'POST';
+            
+            // 如果是编辑模式，使用PUT方法更新记录
+            if (recordId) {
+                url = `${API_BASE}/interviews/${recordId}`;
+                method = 'PUT';
+            }
+            
             // 发送到后端API
-            fetch(`${API_BASE}/interviews`, {
-                method: 'POST',
+            fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -565,7 +574,7 @@
         }
         
         // 删除记录
-        function deleteRecord(company, position, datetime) {
+        function deleteRecord(id) {
             if (!confirm('确定要删除这条记录吗？')) {
                 return;
             }
@@ -573,19 +582,9 @@
             // 显示正在删除的消息
             showMessage('正在删除记录...', 'loading');
             
-            // 构造查询参数
-            const params = new URLSearchParams({
-                company: company,
-                position: position || '',
-                datetime: datetime
-            });
-            
             // 发送到后端API
-            fetch(`${API_BASE}/interviews?${params}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+            fetch(`${API_BASE}/interviews/${id}`, {
+                method: 'DELETE'
             })
             .then(response => {
                 // 检查响应状态
