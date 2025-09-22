@@ -139,7 +139,7 @@ async function initDatabase() {
         send_date TEXT,
         body LONGTEXT,
         delivered BOOLEAN DEFAULT FALSE,
-        UNIQUE KEY unique_email (imap_id, subject(50), sender(50), send_date(50))
+        UNIQUE KEY unique_email (imap_id, subject(50), sender(50), send_date(50), delivered)
       )
     `);
         logMessage('创建/检查 all_emails 表');
@@ -438,7 +438,21 @@ app.get('/api/emails', async (req, res) => {
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
-        const [rows] = await emailDb.query('SELECT *, delivered as is_delivered FROM all_emails ORDER BY send_date DESC');
+        // 获取查询参数
+        const { startDate, endDate } = req.query;
+        
+        let query = 'SELECT *, delivered as is_delivered FROM all_emails';
+        let params = [];
+        
+        // 如果提供了日期范围参数，则添加过滤条件
+        if (startDate && endDate) {
+            query += ' WHERE send_date >= ? AND send_date <= ?';
+            params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
+        }
+        
+        query += ' ORDER BY send_date DESC';
+        
+        const [rows] = await emailDb.query(query, params);
         // 处理日期格式，确保前端能正确解析
         const processedRows = rows.map(row => {
             // 确保send_date字段是字符串格式

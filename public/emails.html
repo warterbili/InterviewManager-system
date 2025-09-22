@@ -322,10 +322,14 @@
             const table = document.getElementById("emailTable").getElementsByTagName('tbody')[0];
             
             // 显示加载状态
-            table.innerHTML = '<tr><td colspan="5" class="loading">加载中...</td></tr>';
+            table.innerHTML = '<tr><td colspan="6" class="loading">加载中...</td></tr>';
             
             // 获取搜索关键词
             const keyword = document.getElementById('searchKeyword').value;
+            
+            // 获取日期范围
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
             
             // 显示正在搜索的消息
             if (keyword) {
@@ -336,6 +340,9 @@
             let apiUrl = `${API_BASE}/emails`;
             if (keyword) {
                 apiUrl = `${API_BASE}/emails/search?keyword=${encodeURIComponent(keyword)}`;
+            } else if (startDate && endDate) {
+                // 如果没有搜索关键词但有日期范围，则添加日期参数
+                apiUrl = `${API_BASE}/emails?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`;
             }
             
             fetch(apiUrl)
