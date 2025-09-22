@@ -23,6 +23,14 @@
 </head>
 <body>
     <a href="#main-content" class="skip-link">跳转到主要内容</a>
+    
+    <!-- 系统切换箭头按钮 -->
+    <img src="./icon/left-button.svg" alt="左箭头" width="60" height="60" class="system-nav-arrow left-arrow" onclick="switchSystem('left')" title="切换到上一个系统">
+    <img src="./icon/right-button.svg" alt="右箭头" width="60" height="60" class="system-nav-arrow right-arrow" onclick="switchSystem('right')" title="切换到下一个系统">
+    
+    <!-- 回到顶部按钮 -->
+    <img src="./icon/top-button.svg" alt="回到顶部" width="60" height="60" class="back-to-top" id="backToTopBtn" onclick="scrollToTop()" title="回到顶部">
+    
     <div class="page-header">
         <div class="container">
             <h1>面试日程安排</h1>
@@ -786,6 +794,56 @@
             
             showMessage('CSV文件导出成功', 'success');
         }
+        
+        // 系统切换函数
+        function switchSystem(direction) {
+            const systems = ['/schedule', '/emails', '/deliveries', '/analytics'];
+            const currentPath = window.location.pathname;
+            
+            // 查找当前系统在数组中的位置
+            const currentIndex = systems.indexOf(currentPath);
+            
+            // 如果当前页面不在系统列表中，跳转到主页
+            if (currentIndex === -1) {
+                window.location.href = '/';
+                return;
+            }
+            
+            // 计算下一个系统的索引
+            let nextIndex;
+            if (direction === 'left') {
+                nextIndex = (currentIndex - 1 + systems.length) % systems.length;
+            } else {
+                nextIndex = (currentIndex + 1) % systems.length;
+            }
+            
+            // 跳转到下一个系统
+            window.location.href = systems[nextIndex];
+        }
+        
+        // 回到顶部函数
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+        
+        // 监听滚动事件，控制回到顶部按钮的显示/隐藏
+        window.addEventListener('scroll', function() {
+            const backToTopBtn = document.getElementById('backToTopBtn');
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                backToTopBtn.style.display = 'block';
+            } else {
+                backToTopBtn.style.display = 'none';
+            }
+        });
+        
+        // 页面加载完成后初始化回到顶部按钮状态
+        document.addEventListener('DOMContentLoaded', function() {
+            const backToTopBtn = document.getElementById('backToTopBtn');
+            backToTopBtn.style.display = 'none';
+        });
     </script>
 </body>
 </html>
