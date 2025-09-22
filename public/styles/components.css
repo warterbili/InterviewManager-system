@@ -576,7 +576,7 @@ tr:hover {
 
 /* 邮件表格列宽 */
 #emailTable th:nth-child(1),
-#emailTable td:nth-child(1) { width: 5%; } /* 选择框列 */
+#emailTable td:nth-child(1) { width: 3%; } /* 选择框列 */
 
 #emailTable th:nth-child(2),
 #emailTable td:nth-child(2) { width: 35%; } /* 邮件主题列 */
@@ -591,7 +591,7 @@ tr:hover {
 #emailTable td:nth-child(5) { width: 10%; } /* 投递状态列 */
 
 #emailTable th:nth-child(6),
-#emailTable td:nth-child(6) { width: 10%; } /* 操作列 */
+#emailTable td:nth-child(6) { width: 12%; } /* 操作列 */
 
 /* 通用表格样式 */
 .email-table,
