@@ -1021,6 +1021,9 @@
             document.getElementById('interviewStatus').value = '一面';
             document.getElementById('interviewResult').value = '等待面试开始';
             
+            // 同时填充新的字段（用于与schedule.html一致的API调用）
+            // 这些字段在saveInterview函数中会被使用
+            
             // 显示弹窗
             document.getElementById('interviewModal').style.display = 'block';
             
@@ -1067,13 +1070,13 @@
                 return;
             }
             
-            // 构造面试日程数据
+            // 构造面试日程数据（使用与schedule.html一致的字段名）
             const interviewData = {
-                company_name: companyName,
+                company: companyName,
                 position: position,
-                interview_date: interviewDate,
-                status: status,
-                result: result
+                datetime: interviewDate,
+                preparation: status,
+                completion: result
             };
             
             console.log('Sending interview data:', interviewData);

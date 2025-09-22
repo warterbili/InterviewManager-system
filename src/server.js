@@ -248,16 +248,16 @@ app.post('/api/interviews', async (req, res) => {
         const data = req.body;
         logMessage(`收到保存面试数据请求: ${JSON.stringify(data)}`);
         
-        // 检查必填字段 - 使用前端发送的字段名
-        if (!data.company_name || !data.interview_date) {
+        // 检查必填字段 - 使用schedule.html中的字段名
+        if (!data.company || !data.datetime) {
             logMessage('缺少必填字段', 'WARN');
             return res.status(400).json({ error: '公司名称和面试时间是必填字段' });
         }
         
-        // 插入新记录 - 映射前端字段到数据库字段
+        // 插入新记录 - 使用schedule.html中的字段名
         const [result] = await interviewDb.query(
             'INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES (?, ?, ?, ?, ?, ?)',
-            [data.company_name, data.position || '', new Date(data.interview_date), data.status || '', data.result || '', '']
+            [data.company, data.position || '', new Date(data.datetime), data.preparation || '', data.completion || '', '']
         );
         logMessage(`插入新面试记录，ID: ${result.insertId}`);
         
@@ -287,15 +287,15 @@ app.put('/api/interviews/:id', async (req, res) => {
             return res.status(400).json({ error: '无效的记录ID' });
         }
         
-        // 检查必填字段 - 使用前端发送的字段名
-        if (!data.company_name || !data.interview_date) {
+        // 检查必填字段 - 使用schedule.html中的字段名
+        if (!data.company || !data.datetime) {
             logMessage('缺少必填字段', 'WARN');
             return res.status(400).json({ error: '公司名称和面试时间是必填字段' });
         }
         
-        // 构造更新语句，映射前端字段到数据库字段
+        // 构造更新语句 - 使用schedule.html中的字段名
         let query = 'UPDATE interviews SET company = ?, position = ?, datetime = ?, preparation = ?, completion = ?';
-        let params = [data.company_name, data.position || '', new Date(data.interview_date), data.status || '', data.result || ''];
+        let params = [data.company, data.position || '', new Date(data.datetime), data.preparation || '', data.completion || ''];
         
         // 更新记录
         query += ' WHERE id = ?';
