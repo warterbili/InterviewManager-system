@@ -143,7 +143,7 @@
             currentMessage.type = type;
             currentMessage.isPersistent = isPersistent;
             
-            // 非持久化消息5秒后自动清除，持久化消息不自动清除
+            // 非持久化消息4秒后自动清除，持久化消息不自动清除
             if (!isPersistent) {
                 setTimeout(() => {
                     // 只有当当前显示的消息与存储的消息一致时才清除
@@ -154,7 +154,7 @@
                         currentMessage.type = '';
                         currentMessage.isPersistent = false;
                     }
-                }, 5000);
+                }, 4000);
             }
         }
         
@@ -496,7 +496,9 @@
                     if (keyword) {
                         showMessage(`搜索完成，找到 ${data.length} 封匹配的邮件`, 'success');
                     } else if (!isFetching) {
-                        // 如果不是搜索操作且不是获取邮件后的加载，清除持久化消息
+                        // 如果不是搜索操作且不是获取邮件后的加载，显示加载完成的消息
+                        showMessage(`加载完成，共找到 ${data.length} 封邮件`, 'success');
+                        // 清除持久化消息
                         currentMessage.isPersistent = false;
                         currentMessage.text = '';
                         currentMessage.type = '';
