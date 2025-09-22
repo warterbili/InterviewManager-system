@@ -289,8 +289,8 @@
                     console.log('[DEBUG] 处理后的消息:', detailedMessage);
 
                     showMessage(detailedMessage, 'success');
-                    // 重新加载邮件数据
-                    loadData();
+                    // 重新加载邮件数据，传入true表示这是获取邮件后的加载
+                    loadData(true);
                 } else {
                     if (result.message.includes('超时')) {
                         showMessage(`邮件获取超时，操作已被终止。请尝试缩小日期范围或稍后再试`, 'error');
@@ -318,7 +318,7 @@
         }
 
         // 从后端API加载数据
-        function loadData() {
+        function loadData(isFetching = false) {
             const table = document.getElementById("emailTable").getElementsByTagName('tbody')[0];
             
             // 显示加载状态
@@ -334,6 +334,9 @@
             // 显示正在搜索的消息
             if (keyword) {
                 showMessage('正在搜索邮件...', 'loading');
+            } else if (isFetching) {
+                // 如果是获取邮件后的加载，保持显示正在获取邮件的消息
+                // 不需要重新显示消息，保持现有的loading消息
             }
             
             // 构建API URL

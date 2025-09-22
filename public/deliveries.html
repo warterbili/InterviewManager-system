@@ -152,6 +152,10 @@
             <div class="card">
                 <div class="card-header">
                     <h2>投递记录列表</h2>
+                    <div class="email-list-actions">
+                        <button class="btn btn-success" onclick="selectAll()">全选</button>
+                        <button class="btn btn-danger" onclick="bulkDeleteRecords()">批量删除</button>
+                    </div>
                 </div>
                 
                 <div id="message" class="message" role="status" aria-live="polite"></div>
@@ -160,6 +164,7 @@
                     <table id="deliveryTable" class="delivery-table" aria-label="投递记录列表">
                         <thead>
                             <tr>
+                                <th scope="col"><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()"></th>
                                 <th scope="col">企业名称</th>
                                 <th scope="col">投递岗位</th>
                                 <th scope="col">投递时间</th>
@@ -276,6 +281,32 @@
         // 格式化日期显示
         function formatDeliveryDate(dateString) {
             return dateString ? new Date(dateString).toLocaleString('zh-CN') : '';
+        }
+        
+        // 全选/取消全选
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            const checkboxes = document.querySelectorAll('.select-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+        
+        // 全选
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.select-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+            
+            // 检查是否已经全选
+            const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+            
+            // 如果已经全选，则取消全选；否则全选
+            const newCheckedState = !allChecked;
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = newCheckedState;
+            });
+            selectAllCheckbox.checked = newCheckedState;
         }
         
         // 查看邮件正文
@@ -641,8 +672,8 @@
             
             // 为整行添加点击事件，打开面试日程弹窗
             newRow.addEventListener('click', function(e) {
-                // 如果点击的是按钮，则不触发弹窗
-                if (e.target.tagName === 'BUTTON') {
+                // 如果点击的是按钮或复选框，则不触发弹窗
+                if (e.target.tagName === 'BUTTON' || e.target.type === 'checkbox') {
                     return;
                 }
                 openInterviewModal(item);
@@ -652,13 +683,17 @@
             const formattedDate = formatDeliveryDate(item.delivery_date);
             
             // 创建单元格
-            const companyCell = newRow.insertCell(0);
-            const positionCell = newRow.insertCell(1);
-            const dateCell = newRow.insertCell(2);
-            const statusCell = newRow.insertCell(3);
-            const emailBodyCell = newRow.insertCell(4);
-            const notesCell = newRow.insertCell(5);
-            const actionCell = newRow.insertCell(6);
+            const selectCell = newRow.insertCell(0);
+            const companyCell = newRow.insertCell(1);
+            const positionCell = newRow.insertCell(2);
+            const dateCell = newRow.insertCell(3);
+            const statusCell = newRow.insertCell(4);
+            const emailBodyCell = newRow.insertCell(5);
+            const notesCell = newRow.insertCell(6);
+            const actionCell = newRow.insertCell(7);
+            
+            // 添加复选框
+            selectCell.innerHTML = `<input type="checkbox" class="select-checkbox" data-id="${item.id}">`;
             
             // 填充单元格内容
             companyCell.textContent = item.company_name;
@@ -846,6 +881,67 @@
                 const errorMsg = error.error || '删除记录失败';
                 showMessage(`删除记录失败: ${errorMsg}`, 'error');
             });
+        }
+        
+        // 批量删除记录
+        function bulkDeleteRecords() {
+            const selectedCheckboxes = document.querySelectorAll('.select-checkbox:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                showMessage('请先选择要删除的记录', 'error');
+                return;
+            }
+            
+            if (!confirm(`确定要删除选中的 ${selectedCheckboxes.length} 条记录吗？`)) {
+                return;
+            }
+            
+            // 显示正在删除的消息
+            showMessage(`正在删除 ${selectedCheckboxes.length} 条记录...`, 'loading');
+            
+            let deletePromises = [];
+            
+            selectedCheckboxes.forEach(checkbox => {
+                const id = checkbox.dataset.id;
+                
+                // 创建删除请求的Promise
+                const deletePromise = fetch(`${API_BASE}/deliveries/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    // 检查响应状态
+                    if (response.status === 503) {
+                        // 数据库未初始化，重定向到配置页面
+                        window.location.href = '/config';
+                        return;
+                    }
+                    
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                });
+                
+                deletePromises.push(deletePromise);
+            });
+            
+            // 等待所有删除请求完成
+            Promise.all(deletePromises)
+                .then(results => {
+                    // 检查是否有结果返回
+                    if (results.length === 0) return;
+                    
+                    showMessage(`成功删除 ${results.length} 条记录！`, 'success');
+                    // 重新加载数据
+                    loadData();
+                    // 取消全选
+                    document.getElementById('selectAllCheckbox').checked = false;
+                })
+                .catch(error => {
+                    console.error('批量删除记录失败:', error);
+                    const errorMsg = error.error || error.message || '批量删除记录失败';
+                    showMessage(`批量删除记录失败: ${errorMsg}`, 'error');
+                });
         }
         
         // 备注弹窗相关变量
