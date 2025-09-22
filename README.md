@@ -9,6 +9,7 @@
   One-stop management of your job interview process, easily track email status and delivery progress</strong>
 </p>
 
+
 <p align="center">
   <a href="#功能特性--features"><img src="https://img.shields.io/badge/功能-Features-blue" alt="功能特性"></a>
   <a href="#技术栈--tech-stack"><img src="https://img.shields.io/badge/技术栈-Tech%20Stack-green" alt="技术栈"></a>
@@ -21,21 +22,54 @@
 
 ## 目录 / Table of Contents
 
+- [目录 / Table of Contents](#目录--table-of-contents)
+- [项目截图 / Screenshots](#项目截图--screenshots)
 - [功能特性 / Features](#功能特性--features)
+  - [面试日程安排 / Interview Scheduling](#面试日程安排--interview-scheduling)
+  - [企业邮件跟踪 / Email Tracking](#企业邮件跟踪--email-tracking)
+  - [企业投递汇总 / Application Tracking](#企业投递汇总--application-tracking)
+  - [系统配置 / System Configuration](#系统配置--system-configuration)
+  - [数据可视化分析 / Data Visualization Analysis](#数据可视化分析--data-visualization-analysis)
+    - [面试日程分析 / Interview Schedule Analysis](#面试日程分析--interview-schedule-analysis)
+    - [企业投递分析 / Application Tracking Analysis](#企业投递分析--application-tracking-analysis)
+    - [邮件分析 / Email Analysis](#邮件分析--email-analysis)
+  - [数据可视化分析 / Data Visualization Analysis](#数据可视化分析--data-visualization-analysis-1)
+  - [未来功能规划 / Future Features Planning](#未来功能规划--future-features-planning)
 - [技术栈 / Tech Stack](#技术栈--tech-stack)
+  - [后端技术 / Backend](#后端技术--backend)
+  - [前端技术 / Frontend](#前端技术--frontend)
+  - [邮件处理 / Email Processing](#邮件处理--email-processing)
+  - [部署方式 / Deployment](#部署方式--deployment)
 - [快速开始 / Quick Start](#快速开始--quick-start)
   - [环境要求 / Requirements](#环境要求--requirements)
   - [安装步骤 / Installation](#安装步骤--installation)
   - [启动项目 / Running the Project](#启动项目--running-the-project)
+    - [方法一：使用启动脚本（推荐） / Method 1: Using startup script (Recommended)](#方法一使用启动脚本推荐--method-1-using-startup-script-recommended)
+    - [方法二：手动启动 / Method 2: Manual startup](#方法二手动启动--method-2-manual-startup)
 - [系统配置 / Configuration](#系统配置--configuration)
   - [数据库配置 / Database Configuration](#数据库配置--database-configuration)
   - [邮箱配置 / Email Configuration](#邮箱配置--email-configuration)
 - [项目结构 / Project Structure](#项目结构--project-structure)
 - [依赖说明 / Dependencies](#依赖说明--dependencies)
-- [版本更新 / Version Updates](#版本更新--version-updates)
+  - [Node.js依赖 / Node.js Dependencies](#nodejs依赖--nodejs-dependencies)
+  - [Python依赖 / Python Dependencies](#python依赖--python-dependencies)
+- [贡献 / Contributing](#贡献--contributing)
 - [License](#license)
 
 ---
+
+## 项目截图 / Screenshots
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+  <img src="images/项目截图.PNG" alt="项目截图" width="45%"/>
+  <img src="images/项目截图1.PNG" alt="项目截图1" width="45%"/>
+  <img src="images/项目截图2.PNG" alt="项目截图2" width="45%"/>
+  <img src="images/项目截图3.PNG" alt="项目截图3" width="45%"/>
+  <img src="images/项目截图4.PNG" alt="项目截图4" width="45%"/>
+  <img src="images/项目截图5.PNG" alt="项目截图5" width="45%"/>
+</div>
+
+> **提示**：点击图片可查看完整尺寸
 
 ## 功能特性 / Features
 
@@ -115,6 +149,8 @@
 - **AI面试助手**：计划集成人工智能技术，提供常见面试问题练习和智能问答反馈
 - **多平台同步**：计划支持与其他求职平台数据同步，实现统一管理
 - **智能推荐**：基于用户投递历史和面试结果，智能推荐合适的职位
+
+> **注意**：未来功能规划仅为开发路线图，具体实现时间可能根据开发进度调整。
 
 ---
 
@@ -267,6 +303,10 @@
 - `pymysql`：Python MySQL数据库驱动 / Python MySQL database driver
 
 ---
+
+## 贡献 / Contributing
+
+欢迎提交 Issue 和 Pull Request 来帮助改进本项目。请确保您的代码符合项目现有的代码风格。
 
 ## License
 
