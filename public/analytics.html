@@ -1570,6 +1570,12 @@
     </div>
 
     <script>
+        // 获取弹窗元素
+        const modal = document.getElementById('interviewDetailModal');
+        const modalContent = document.getElementById('interviewDetailModalContent');
+        const modalTitleBar = document.getElementById('interviewDetailModalTitleBar');
+        const modalClose = document.getElementById('interviewDetailModalClose');
+        
         // 拖动功能相关变量
         let isDragging = false;
         let currentX;
@@ -1579,29 +1585,17 @@
         let xOffset = 0;
         let yOffset = 0;
         
-        // 获取弹窗元素
-        const modal = document.getElementById('interviewDetailModal');
-        const modalContent = document.getElementById('interviewDetailModalContent');
-        const modalTitleBar = document.getElementById('interviewDetailModalTitleBar');
-        const modalClose = document.getElementById('interviewDetailModalClose');
-        
-        // 拖动功能相关函数
+        // 拖动功能相关函数（优化版）
         function dragStart(e) {
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-            
-            if (e.target === modalTitleBar) {
+            // 只有点击标题栏时才能拖动
+            if (e.target.classList.contains('modal-title-bar') || e.target.closest('.modal-title-bar')) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
                 isDragging = true;
-                modalContent.style.cursor = 'grabbing';
+                // 添加 grabbing 光标样式
+                modalTitleBar.style.cursor = 'grabbing';
+                e.preventDefault();
             }
-        }
-        
-        function dragEnd() {
-            initialX = currentX;
-            initialY = currentY;
-            
-            isDragging = false;
-            modalContent.style.cursor = 'default';
         }
         
         function drag(e) {
@@ -1609,22 +1603,29 @@
                 e.preventDefault();
                 currentX = e.clientX - initialX;
                 currentY = e.clientY - initialY;
-                
                 xOffset = currentX;
                 yOffset = currentY;
                 
-                setTranslate(currentX, currentY, modalContent);
+                // 使用与邮件弹窗相同的变换方式
+                modalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
             }
         }
         
-        function setTranslate(xPos, yPos, el) {
-            el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+            // 恢复默认光标样式
+            modalTitleBar.style.cursor = 'grab';
         }
         
-        // 添加拖动事件监听器
+        // 设置默认光标样式
+        modalTitleBar.style.cursor = 'grab';
+        
+        // 添加鼠标事件监听器（只添加一次）
         modalTitleBar.addEventListener('mousedown', dragStart);
-        document.addEventListener('mouseup', dragEnd);
         document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
         
         // 关闭弹窗
         function closeInterviewDetailModal() {
@@ -1632,18 +1633,22 @@
             // 重置拖动位置
             xOffset = 0;
             yOffset = 0;
-            setTranslate(0, 0, modalContent);
+            // 重置变换
+            modalContent.style.transform = 'translate(-50%, -50%)';
         }
         
         // 点击关闭按钮关闭弹窗
         modalClose.addEventListener('click', closeInterviewDetailModal);
         
-        // 点击弹窗外部关闭弹窗
+        // 点击弹窗外部不关闭弹窗，只能通过点击关闭按钮关闭
+        // 已禁用此功能以保持与邮件弹窗一致的行为
+        /*
         modal.addEventListener('click', function(event) {
             if (event.target === modal) {
                 closeInterviewDetailModal();
             }
         });
+        */
         
         // 显示面试详情弹窗
         function showInterviewDetails(dateStr, interviews) {
@@ -1689,6 +1694,9 @@
             // 显示弹窗内容
             document.getElementById('interviewDetailModalBody').innerHTML = detailHTML;
             modal.style.display = 'block';
+            
+            // 确保弹窗居中显示
+            modalContent.style.transform = 'translate(-50%, -50%)';
         }
     </script>
 </body>
