@@ -491,11 +491,22 @@
                 return;
             }
             
+            // 获取当前行的备注信息（如果是编辑模式）
+            let notes = '';
+            if (id) {
+                // 在编辑模式下，从表格行中获取备注
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    notes = row.notes || '';
+                }
+            }
+            
             const recordData = {
                 company_name: companyName,
                 position: position,
                 delivery_date: deliveryDate,
-                status: status
+                status: status,
+                notes: notes
             };
             
             let url = `${API_BASE}/deliveries`;

@@ -222,7 +222,7 @@ app.get('/api/interviews', async (req, res) => {
             id: row.id,
             company: row.company,
             position: row.position,
-            datetime: row.datetime ? row.datetime.toISOString().slice(0, 16) : null,
+            datetime: row.datetime,
             preparation: row.preparation,
             completion: row.completion,
             notes: row.notes || ''
@@ -713,7 +713,7 @@ app.post('/api/deliveries', async (req, res) => {
             return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
         }
     
-        const { company_name, position, delivery_date, status, email_id } = req.body;
+        const { company_name, position, delivery_date, status, notes, email_id } = req.body;
     
         // 检查必填字段
         if (!company_name || !delivery_date || !status) {
@@ -722,8 +722,8 @@ app.post('/api/deliveries', async (req, res) => {
     
         // 插入数据
         const [result] = await deliveryDb.query(
-            'INSERT INTO deliveries (company_name, position, delivery_date, status, email_id) VALUES (?, ?, ?, ?, ?)',
-            [company_name, position || '', delivery_date, status, email_id || null]
+            'INSERT INTO deliveries (company_name, position, delivery_date, status, notes, email_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [company_name, position || '', delivery_date, status, notes || '', email_id || null]
         );
     
         res.json({ message: '投递记录添加成功', id: result.insertId });

@@ -494,7 +494,7 @@
         
         // 保存记录（添加或更新）
         function saveRecord() {
-            const recordId = document.getElementById('recordId').value;
+            const id = document.getElementById('recordId').value;
             const company = document.getElementById('companyName').value;
             const position = document.getElementById('position').value;
             const interviewDate = document.getElementById('interviewDate').value;
@@ -507,36 +507,35 @@
                 return;
             }
             
+            // 获取当前行的备注信息（如果是编辑模式）
+            let notes = '';
+            if (id) {
+                // 在编辑模式下，从表格行中获取备注
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    notes = row.notes || '';
+                }
+            }
+            
             const recordData = {
                 company: company,
                 position: position,
                 datetime: interviewDate,
                 preparation: preparation,
                 completion: completion,
-                notes: '' // 默认备注为空
+                notes: notes
             };
-            
-            // 如果是编辑模式，获取备注内容
-            if (recordId) {
-                // 在编辑模式下，查找当前行以获取备注
-                const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
-                for (let i = 0; i < table.rows.length; i++) {
-                    const row = table.rows[i];
-                    // 检查是否是正在编辑的行
-                    if (row.getAttribute('data-id') == recordId) {
-                        recordData.notes = row.notes || '';
-                        break;
-                    }
-                }
-            }
             
             let url = `${API_BASE}/interviews`;
             let method = 'POST';
             
-            // 如果是编辑模式，使用PUT方法更新记录
-            if (recordId) {
-                url = `${API_BASE}/interviews/${recordId}`;
+            // 如果有ID，则为更新操作
+            if (id) {
+                url += `/${id}`;
                 method = 'PUT';
+                showMessage(`正在更新记录: ${company}...`, 'loading');
+            } else {
+                showMessage(`正在添加记录: ${company}...`, 'loading');
             }
             
             // 发送到后端API
@@ -564,14 +563,14 @@
                 // 检查是否有结果返回
                 if (!result) return;
                 
-                showMessage(`记录保存成功: ${company}`, 'success');
+                showMessage(id ? `记录更新成功: ${company}` : `记录添加成功: ${company}`, 'success');
                 resetForm();
                 loadData(); // 重新加载数据
             })
             .catch(error => {
                 console.error('保存记录失败:', error);
-                const errorMsg = error.error || error.message || '保存记录失败';
-                showMessage(`保存记录失败: ${errorMsg}`, 'error');
+                const errorMsg = error.error || '保存记录失败';
+                showMessage(`${id ? '更新' : '添加'}记录失败: ${errorMsg}`, 'error');
             });
         }
         
