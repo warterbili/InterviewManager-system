@@ -233,6 +233,9 @@ app.get('/api/interviews', async (req, res) => {
     }
 });
 
+
+
+// 添加或更新面试数据
 app.post('/api/interviews', async (req, res) => {
     try {
         if (!interviewDb) {
@@ -241,10 +244,11 @@ app.post('/api/interviews', async (req, res) => {
         }
     
         const data = req.body;
-        logMessage(`收到保存面试数据请求，共 ${data.length} 条记录`);
+        logMessage(`收到保存面试数据请求: ${JSON.stringify(data)}`);
         
-        // 添加安全检查：确保数据不为空才执行删除操作
-        if (data && Array.isArray(data)) {
+        // 检查是否是数组（批量更新）或单个对象（添加/更新单条记录）
+        if (Array.isArray(data)) {
+            // 批量更新 - 清空表并重新插入所有数据
             await interviewDb.query('DELETE FROM interviews');
             logMessage('已清空面试数据表');
         
@@ -260,16 +264,82 @@ app.post('/api/interviews', async (req, res) => {
                 await interviewDb.query('INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES ?', [values]);
                 logMessage(`成功插入 ${data.length} 条面试记录`);
             }
+        } else if (data && typeof data === 'object') {
+            // 单条记录操作 - 检查是否已存在相同记录
+            const { company, position, datetime } = data;
+            
+            // 检查必填字段
+            if (!company || !datetime) {
+                logMessage('缺少必填字段', 'WARN');
+                return res.status(400).json({ error: '公司名称和面试时间是必填字段' });
+            }
+            
+            // 检查是否已存在相同记录（公司名、岗位、时间完全相同）
+            const [existingRows] = await interviewDb.query(
+                'SELECT id FROM interviews WHERE company = ? AND position = ? AND datetime = ?',
+                [company, position || '', datetime]
+            );
+            
+            if (existingRows.length > 0) {
+                // 更新现有记录
+                const [result] = await interviewDb.query(
+                    'UPDATE interviews SET preparation = ?, completion = ?, notes = ? WHERE id = ?',
+                    [data.preparation || '', data.completion || '', data.notes || '', existingRows[0].id]
+                );
+                logMessage(`更新面试记录，ID: ${existingRows[0].id}`);
+            } else {
+                // 插入新记录
+                const [result] = await interviewDb.query(
+                    'INSERT INTO interviews (company, position, datetime, preparation, completion, notes) VALUES (?, ?, ?, ?, ?, ?)',
+                    [company, position || '', new Date(datetime), data.preparation || '', data.completion || '', data.notes || '']
+                );
+                logMessage(`插入新面试记录，ID: ${result.insertId}`);
+            }
         } else {
-            logMessage('收到无效的面试数据，跳过保存操作', 'WARN');
+            logMessage('收到无效的面试数据格式', 'WARN');
             return res.status(400).json({ error: '无效的数据格式' });
         }
     
         res.json({ message: '面试数据保存成功' });
-        logMessage(`面试数据保存完成，共处理 ${data.length} 条记录`);
+        logMessage('面试数据保存完成');
     } catch (err) {
         logMessage(`保存面试数据失败: ${err.message}`, 'ERROR');
-        res.status(500).json({ error: '保存面试数据失败' });
+        res.status(500).json({ error: '保存面试数据失败: ' + err.message });
+    }
+});
+
+// 删除面试数据
+app.delete('/api/interviews', async (req, res) => {
+    try {
+        if (!interviewDb) {
+            logMessage('数据库未初始化', 'WARN');
+            return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
+        }
+    
+        const { company, position, datetime } = req.query;
+        
+        // 检查必填参数
+        if (!company || !datetime) {
+            logMessage('缺少删除记录所需的参数', 'WARN');
+            return res.status(400).json({ error: '缺少删除记录所需的参数' });
+        }
+        
+        // 删除记录
+        const [result] = await interviewDb.query(
+            'DELETE FROM interviews WHERE company = ? AND position = ? AND datetime = ?',
+            [company, position || '', datetime]
+        );
+        
+        if (result.affectedRows === 0) {
+            logMessage('未找到要删除的记录', 'WARN');
+            return res.status(404).json({ error: '未找到要删除的记录' });
+        }
+        
+        logMessage(`删除面试记录成功: ${company}, ${position || ''}, ${datetime}`);
+        res.json({ message: '记录删除成功' });
+    } catch (err) {
+        logMessage(`删除面试数据失败: ${err.message}`, 'ERROR');
+        res.status(500).json({ error: '删除面试数据失败: ' + err.message });
     }
 });
 

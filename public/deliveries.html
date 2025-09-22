@@ -5,244 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>企业投递汇总</title>
     <link rel="stylesheet" href="./common.css">
-    <style>
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .form-col {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .form-group {
-            margin-bottom: 0.75rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        input[type="text"], input[type="datetime-local"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-            box-sizing: border-box;
-            min-height: calc(2.25rem + 2px);
-        }
-
-        input[type="text"]:focus, input[type="datetime-local"]:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        @media (max-width: 768px) {
-            .form-row {
-                flex-direction: column;
-                gap: 0;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-                margin-bottom: 0.5rem;
-            }
-            
-            #saveBtn, #resetBtn {
-                width: 100% !important;
-                min-height: calc(2.25rem + 2px) !important;
-                padding: 0.5rem 1rem !important;
-            }
-            
-            /* 小屏幕上的新布局 */
-            div[style*="flex-wrap: wrap"] {
-                flex-direction: column;
-                gap: 0.5rem !important;
-                margin-bottom: 0.5rem !important;
-                padding: 0.5rem !important;
-            }
-            
-            div[style*="display: flex; align-items: end"] {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            div[style*="margin-left: 0.75rem"] {
-                margin-left: 0 !important;
-                margin-top: 0.75rem;
-            }
-        }
-        
-        /* Accessibility improvements for status messages */
-        #message[role="status"] {
-            border: 1px solid transparent;
-            border-radius: var(--border-radius);
-            padding: 0.75rem;
-            margin: 0.75rem 0;
-        }
-        
-        #message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
-        }
-        
-        #message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
-        }
-        
-        #message.loading {
-            background-color: #cce5ff;
-            color: #004085;
-            border-color: #b8daff;
-        }
-        
-        /* Skip link for accessibility */
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 6px;
-            background: var(--primary-color);
-            color: white;
-            padding: 8px;
-            z-index: 1000;
-            border-radius: var(--border-radius);
-        }
-        
-        .skip-link:focus {
-            top: 6px;
-        }
-        
-        /* Screen reader only class */
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background-color: var(--gray-100);
-            border-radius: var(--border-radius);
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filter-group label {
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-        
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-        
-        /* 备注弹窗样式 */
-        .modal {
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            padding: 1rem;
-            border-bottom: 1px solid var(--gray-300);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            margin: 0;
-            font-size: 1.25rem;
-        }
-
-        .close {
-            font-size: 1.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            color: var(--gray-500);
-        }
-
-        .close:hover {
-            color: var(--gray-700);
-        }
-
-        .modal-body {
-            padding: 1rem;
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        #notesTextarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 150px;
-            box-sizing: border-box;
-        }
-
-        #notesTextarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        .modal-footer {
-            padding: 1rem;
-            border-top: 1px solid var(--gray-300);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.5rem;
-        }
-    </style>
 </head>
 <body>
     <a href="#main-content" class="skip-link">跳转到主要内容</a>
@@ -271,25 +33,25 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="companyName">企业名称 *</label>
-                                <input type="text" id="companyName" required aria-describedby="companyNameHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; transition: var(--transition); box-sizing: border-box; width: 100%;">
+                                <input type="text" id="companyName" class="form-control" required aria-describedby="companyNameHelp">
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="position">投递岗位</label>
-                                <input type="text" id="position" aria-describedby="positionHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; transition: var(--transition); box-sizing: border-box; width: 100%;">
+                                <input type="text" id="position" class="form-control" aria-describedby="positionHelp">
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="deliveryDate">投递时间 *</label>
-                                <input type="datetime-local" id="deliveryDate" required aria-describedby="deliveryDateHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; transition: var(--transition); box-sizing: border-box; width: 100%;">
+                                <input type="datetime-local" id="deliveryDate" class="form-control" required aria-describedby="deliveryDateHelp">
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label for="status">投递状态 *</label>
-                                <select id="status" required aria-describedby="statusHelp" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
+                                <select id="status" class="form-control" required aria-describedby="statusHelp">
                                     <option value="">请选择状态</option>
                                     <option value="投递完成">投递完成</option>
                                     <option value="简历筛选中">简历筛选中</option>
@@ -306,36 +68,45 @@
                     <div class="filters">
                         <div class="filter-group">
                             <label for="searchInput">搜索:</label>
-                            <input type="text" id="searchInput" placeholder="搜索企业名称、岗位、状态等..." style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; width: 100%;">
+                            <div class="search-container">
+                                <input type="text" id="searchInput" class="form-control" placeholder="搜索企业名称、岗位、状态等...">
+                                <button id="searchBtn" class="btn btn-primary">搜索</button>
+                            </div>
                         </div>
                         <div class="filter-group">
                             <label for="sortOrder">排序方式:</label>
-                            <select id="sortOrder" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
-                                <option value="asc">时间升序（最早优先）</option>
+                            <select id="sortOrder" class="form-control">
                                 <option value="desc">时间降序（最新优先）</option>
+                                <option value="asc">时间升序（最早优先）</option>
                             </select>
                         </div>
                         <div class="filter-group">
-                            <label> </label>
-                            <div class="action-buttons" style="margin: 0;">
-                                <button type="button" class="btn btn-success" id="saveBtn" style="min-height: calc(2.25rem + 2px);">
+                            <label>操作:</label>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-success btn-sm" id="saveBtn">
                                     保存记录
                                 </button>
-                                <button type="button" class="btn btn-primary" id="resetBtn" style="min-height: calc(2.25rem + 2px);">
+                                <button type="button" class="btn btn-primary btn-sm" id="resetBtn">
                                     重置
                                 </button>
-                                <button type="button" class="btn btn-info" id="exportBtn" style="min-height: calc(2.25rem + 2px);">
+                                <button type="button" class="btn btn-info btn-sm" id="exportBtn">
                                     导出CSV
                                 </button>
                             </div>
                         </div>
                     </div>
                 </form>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>投递记录列表</h2>
+                </div>
                 
-                <div id="message" role="status" aria-live="polite"></div>
+                <div id="message" class="message" role="status" aria-live="polite"></div>
                 
                 <div class="table-container">
-                    <table id="deliveryTable" aria-label="投递记录列表">
+                    <table id="deliveryTable" class="delivery-table" aria-label="投递记录列表">
                         <thead>
                             <tr>
                                 <th scope="col">ID</th>
@@ -355,14 +126,17 @@
             </div>
 
     <!-- 备注弹窗 -->
-    <div id="notesModal" class="modal" style="display: none;">
+    <div id="notesModal" class="modal">
         <div class="modal-content" id="notesModalContent">
-            <div class="modal-header">
+            <div class="modal-title-bar">
                 <h2>添加/编辑备注</h2>
-                <span class="close" onclick="closeNotesModal()">×</span>
+                <span class="modal-close" onclick="closeNotesModal()">×</span>
             </div>
             <div class="modal-body">
-                <textarea id="notesTextarea" placeholder="请输入备注内容..." rows="10"></textarea>
+                <textarea id="notesTextarea" placeholder="请输入备注内容..."></textarea>
+                <div class="char-count">
+                    <span id="charCounter">0</span> 字符
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeNotesModal()">取消</button>
@@ -405,13 +179,15 @@
         function showMessage(text, type) {
             const messageEl = document.getElementById('message');
             messageEl.textContent = text;
-            messageEl.className = type;
+            messageEl.className = 'message ' + type + ' show';
             
-            // 3秒后自动清除消息
-            setTimeout(() => {
-                messageEl.textContent = '';
-                messageEl.className = '';
-            }, 3000);
+            // loading消息不自动清除，其他消息5秒后自动清除
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                    messageEl.className = '';
+                }, 5000);
+            }
         }
 
         // 页面加载时从后端API获取数据
@@ -422,6 +198,9 @@
             document.getElementById('saveBtn').addEventListener('click', saveRecord);
             document.getElementById('resetBtn').addEventListener('click', resetForm);
             document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                loadData();
+            });
             
             // 为排序选择器添加事件监听器
             document.getElementById('sortOrder').addEventListener('change', function() {
@@ -436,6 +215,16 @@
             document.getElementById('searchInput').addEventListener('input', function() {
                 filterTable();
             });
+            
+            // 为搜索框添加回车键事件监听器
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadData();
+                }
+            });
+            
+            // 为备注文本区域添加字符计数监听器
+            document.getElementById('notesTextarea').addEventListener('input', updateCharCount);
         });
 
         // 按时间排序表格行
@@ -470,11 +259,26 @@
         function loadData() {
             const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
             
-            // 显示加载状态
-            table.innerHTML = '<tr><td colspan="7" style="text-align: center;">正在加载数据...</td></tr>';
-            showMessage('正在加载投递记录...', 'loading');
+            // 获取搜索关键词
+            const keyword = document.getElementById('searchInput').value;
             
-            fetch(`${API_BASE}/deliveries`)
+            // 显示加载状态
+            table.innerHTML = '<tr><td colspan="7" class="loading">加载中...</td></tr>';
+            
+            // 显示正在搜索的消息
+            if (keyword) {
+                showMessage('正在搜索投递记录...', 'loading');
+            } else {
+                showMessage('正在加载投递记录...', 'loading');
+            }
+            
+            // 构建API URL
+            let apiUrl = `${API_BASE}/deliveries`;
+            if (keyword) {
+                apiUrl = `${API_BASE}/deliveries/search?keyword=${encodeURIComponent(keyword)}`;
+            }
+            
+            fetch(apiUrl)
                 .then(response => {
                     // 检查响应状态
                     if (response.status === 503) {
@@ -496,7 +300,11 @@
                     
                     if (data.length === 0) {
                         table.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无投递记录</td></tr>';
-                        showMessage('加载完成，暂无投递记录', 'success');
+                        if (keyword) {
+                            showMessage(`搜索完成，找到 0 条匹配的记录`, 'success');
+                        } else {
+                            showMessage('加载完成，暂无投递记录', 'success');
+                        }
                         return;
                     }
                     
@@ -513,7 +321,11 @@
                     // 按时间排序
                     sortTableRows(rows);
                     
-                    showMessage(`加载完成，共找到 ${data.length} 条投递记录`, 'success');
+                    if (keyword) {
+                        showMessage(`搜索完成，找到 ${data.length} 条匹配的记录`, 'success');
+                    } else {
+                        showMessage(`加载完成，共找到 ${data.length} 条投递记录`, 'success');
+                    }
                 })
                 .catch(error => {
                     console.error('加载数据失败:', error);
@@ -526,6 +338,7 @@
         function addRowToTable(item) {
             const table = document.getElementById("deliveryTable").getElementsByTagName('tbody')[0];
             const newRow = table.insertRow();
+            newRow.dataset.id = item.id;
             
             // 格式化日期显示
             const formattedDate = formatDeliveryDate(item.delivery_date);
@@ -545,7 +358,7 @@
             positionCell.textContent = item.position || '';
             dateCell.textContent = formattedDate;
             statusCell.textContent = item.status;
-            notesCell.innerHTML = '<button type="button" class="btn btn-secondary" onclick="openNotesModal(this)">备注</button>';
+            notesCell.innerHTML = '<div class="notes-cell"><button type="button" class="btn btn-secondary btn-sm" onclick="openNotesModal(this)">备注</button></div>';
             
             // 存储备注内容在行元素上
             newRow.notes = item.notes || '';
@@ -553,20 +366,23 @@
             // 创建操作按钮
             const editBtn = document.createElement('button');
             editBtn.type = 'button';
-            editBtn.className = 'btn btn-warning';
+            editBtn.className = 'btn btn-warning btn-sm';
             editBtn.textContent = '编辑';
-            editBtn.addEventListener('click', () => editRecord(item.id, item.company_name, item.position, item.delivery_date, item.status));
+            editBtn.onclick = () => editRecord(item.id, item.company_name, item.position, item.delivery_date, item.status);
             
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
-            deleteBtn.className = 'btn btn-danger';
+            deleteBtn.className = 'btn btn-danger btn-sm';
             deleteBtn.textContent = '删除';
-            deleteBtn.addEventListener('click', () => deleteRecord(item.id));
+            deleteBtn.onclick = () => deleteRecord(item.id);
             
             // 添加按钮到操作单元格
-            actionCell.appendChild(editBtn);
-            actionCell.appendChild(deleteBtn);
-            actionCell.className = 'action-buttons';
+            const actionDiv = document.createElement('div');
+            actionDiv.className = 'action-buttons';
+            actionDiv.appendChild(editBtn);
+            actionDiv.appendChild(deleteBtn);
+            actionCell.appendChild(actionDiv);
+            actionCell.className = 'action-cell';
         }
         
         // 根据搜索关键词筛选表格
@@ -651,7 +467,7 @@
         // 重置表单
         function resetForm() {
             // 重置表单标题
-            document.getElementById('form-title').textContent = '添加/编辑投递记录';
+            document.getElementById('form-title').textContent = '企业投递汇总';
             
             // 清空表单数据
             document.getElementById('recordId').value = '';
@@ -784,26 +600,43 @@
         function openNotesModal(button) {
             currentRow = button.closest('tr');
             const notes = currentRow.notes || '';
-            document.getElementById('notesTextarea').value = notes;
-            document.getElementById('notesModal').style.display = 'flex';
+            const companyName = currentRow.cells[1].textContent || '';
+            const position = currentRow.cells[2].textContent || '';
             
-            // 添加拖动事件监听器
+            // 设置弹窗标题
+            const modalTitle = document.querySelector('#notesModal .modal-title-bar h2');
+            modalTitle.textContent = `备注 - ${companyName}${position ? ' (' + position + ')' : ''}`;
+            
+            const textarea = document.getElementById('notesTextarea');
+            textarea.value = notes;
+            document.getElementById('notesModal').style.display = 'block';
+            
+            // 重置弹窗位置
+            xOffset = 0;
+            yOffset = 0;
             const modalContent = document.getElementById('notesModalContent');
-            modalContent.addEventListener('mousedown', dragStart);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('mousemove', drag);
+            modalContent.style.transform = 'translate(-50%, -50%)';
+            
+            // 更新字符计数
+            updateCharCount();
+            
+            // 聚焦到文本区域
+            setTimeout(() => {
+                textarea.focus();
+            }, 100);
+        }
+        
+        // 更新字符计数
+        function updateCharCount() {
+            const textarea = document.getElementById('notesTextarea');
+            const charCount = textarea.value.length;
+            document.getElementById('charCounter').textContent = charCount;
         }
         
         // 关闭备注弹窗
         function closeNotesModal() {
             document.getElementById('notesModal').style.display = 'none';
             currentRow = null;
-            
-            // 移除拖动事件监听器
-            const modalContent = document.getElementById('notesModalContent');
-            modalContent.removeEventListener('mousedown', dragStart);
-            document.removeEventListener('mouseup', dragEnd);
-            document.removeEventListener('mousemove', drag);
         }
         
         // 保存备注
@@ -816,51 +649,61 @@
             closeNotesModal();
         }
         
-        // 拖动功能相关函数
+        // 弹窗拖动开始
         function dragStart(e) {
-            if (e.target === document.getElementById('notesTextarea')) {
-                return; // 如果点击的是文本区域，不启动拖动
-            }
-            
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-            
-            if (e.target === document.getElementById('notesModalContent')) {
+            // 只有点击标题栏时才能拖动
+            if (e.target.classList.contains('modal-title-bar') || e.target.closest('.modal-title-bar')) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
                 isDragging = true;
+                e.preventDefault();
             }
         }
         
-        function dragEnd() {
-            initialX = currentX;
-            initialY = currentY;
-            
-            isDragging = false;
-        }
-        
+        // 弹窗拖动中
         function drag(e) {
             if (isDragging) {
                 e.preventDefault();
                 currentX = e.clientX - initialX;
                 currentY = e.clientY - initialY;
-                
                 xOffset = currentX;
                 yOffset = currentY;
                 
-                setTranslate(currentX, currentY, document.getElementById('notesModalContent'));
+                const modalContent = document.getElementById('notesModalContent');
+                modalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
             }
         }
         
-        function setTranslate(xPos, yPos, el) {
-            el.style.transform = "translate3d(" + xPos + "px, " + yPos + "px, 0)";
+        // 弹窗拖动结束
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
         }
         
-        // 点击弹窗外部关闭弹窗
+        // 为弹窗标题栏添加拖动事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalTitleBar = document.querySelector('#notesModal .modal-title-bar');
+            if (modalTitleBar) {
+                modalTitleBar.addEventListener('mousedown', dragStart);
+            }
+        });
+        
+        // 添加鼠标事件监听器（只添加一次）
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        
+        // 点击弹窗外部关闭弹窗 - 已禁用此功能
+        /*
         window.onclick = function(event) {
             const modal = document.getElementById('notesModal');
+            const modalContent = document.getElementById('notesModalContent');
+            // 检查点击的是否是弹窗遮罩层（而不是弹窗内容）
             if (event.target === modal) {
                 closeNotesModal();
             }
-        }
+        };
+        */
         
         // 导出数据为CSV文件
         function exportToCSV() {

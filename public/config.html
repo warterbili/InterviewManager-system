@@ -5,107 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>系统配置 - 面试管理系统</title>
     <link rel="stylesheet" href="./common.css">
-    <style>
-        .config-container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .config-section {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--box-shadow-sm);
-        }
-
-        .config-section h2 {
-            margin-top: 0;
-            color: var(--primary-color);
-            border-bottom: 1px solid var(--gray-200);
-            padding-bottom: 0.5rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--gray-700);
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-            box-sizing: border-box;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        .btn-save {
-            background-color: var(--success-color);
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-save:hover {
-            background-color: #449d44;
-        }
-
-        .alert {
-            padding: 0.75rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 1.5rem;
-            display: none;
-        }
-
-        .alert.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .alert.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .note {
-            background-color: #e9f7fe;
-            border-left: 4px solid var(--info-color);
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 0 var(--border-radius) var(--border-radius) 0;
-        }
-
-        @media (max-width: 768px) {
-            .config-container {
-                padding: 0 15px;
-            }
-            
-            .config-section {
-                padding: 1rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="page-header">
@@ -114,66 +13,74 @@
         </div>
     </div>
     
-    <div class="container config-container">
+    <div class="container">
         <div class="breadcrumb">
             <a href="/" class="back-btn">
                 ← 返回主页
             </a>
         </div>
         
-        <div id="alert" class="alert"></div>
+        <div id="alert" class="message"></div>
         
-        <div class="config-section">
-            <h2>数据库配置</h2>
-            <form id="databaseConfigForm">
-                <div class="form-group">
-                    <label for="dbHost">数据库主机</label>
-                    <input type="text" id="dbHost" class="form-control" placeholder="数据库主机">
-                </div>
-                
-                <div class="form-group">
-                    <label for="dbUser">数据库用户名</label>
-                    <input type="text" id="dbUser" class="form-control" placeholder="数据库用户名">
-                </div>
-                
-                <div class="form-group">
-                    <label for="dbPassword">数据库密码</label>
-                    <input type="password" id="dbPassword" class="form-control" placeholder="数据库密码">
-                </div>
-                
-                <div class="form-group">
-                    <label for="dbCharset">数据库字符集</label>
-                    <input type="text" id="dbCharset" class="form-control" placeholder="数据库字符集">
-                </div>
-            </form>
+        <div class="card">
+            <div class="card-header">
+                <h2>数据库配置</h2>
+            </div>
+            <div class="card-body">
+                <form id="databaseConfigForm">
+                    <div class="form-group">
+                        <label for="dbHost">数据库主机</label>
+                        <input type="text" id="dbHost" class="form-control" placeholder="数据库主机">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dbUser">数据库用户名</label>
+                        <input type="text" id="dbUser" class="form-control" placeholder="数据库用户名">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dbPassword">数据库密码</label>
+                        <input type="password" id="dbPassword" class="form-control" placeholder="数据库密码">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dbCharset">数据库字符集</label>
+                        <input type="text" id="dbCharset" class="form-control" placeholder="数据库字符集">
+                    </div>
+                </form>
+            </div>
         </div>
         
-        <div class="config-section">
-            <h2>邮箱配置</h2>
-            <div class="note">
-                <p><strong>注意：</strong>QQ邮箱需要开启IMAP服务并使用授权码登录，而不是邮箱密码。</p>
+        <div class="card">
+            <div class="card-header">
+                <h2>邮箱配置</h2>
             </div>
-            
-            <form id="emailConfigForm">
-                <div class="form-group">
-                    <label for="emailAddress">邮箱地址</label>
-                    <input type="email" id="emailAddress" class="form-control" placeholder="邮箱地址">
+            <div class="card-body">
+                <div class="message info">
+                    <p><strong>注意：</strong>QQ邮箱需要开启IMAP服务并使用授权码登录，而不是邮箱密码。</p>
                 </div>
                 
-                <div class="form-group">
-                    <label for="emailPassword">邮箱授权码</label>
-                    <input type="password" id="emailPassword" class="form-control" placeholder="邮箱授权码">
-                </div>
-                
-                <div class="form-group">
-                    <label for="imapServer">IMAP服务器</label>
-                    <input type="text" id="imapServer" class="form-control" placeholder="IMAP服务器">
-                </div>
-            </form>
+                <form id="emailConfigForm">
+                    <div class="form-group">
+                        <label for="emailAddress">邮箱地址</label>
+                        <input type="email" id="emailAddress" class="form-control" placeholder="邮箱地址">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="emailPassword">邮箱授权码</label>
+                        <input type="password" id="emailPassword" class="form-control" placeholder="邮箱授权码">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="imapServer">IMAP服务器</label>
+                        <input type="text" id="imapServer" class="form-control" placeholder="IMAP服务器">
+                    </div>
+                </form>
+            </div>
         </div>
         
         <div class="form-group">
-            <button type="button" id="saveConfigBtn" class="btn-save">保存配置</button>
+            <button type="button" id="saveConfigBtn" class="btn btn-success">保存配置</button>
         </div>
     </div>
 
@@ -182,11 +89,11 @@
         function showAlert(message, type) {
             const alertEl = document.getElementById('alert');
             alertEl.textContent = message;
-            alertEl.className = 'alert ' + type;
-            alertEl.style.display = 'block';
+            alertEl.className = 'message ' + type + ' show';
             
             // 5秒后自动隐藏
             setTimeout(() => {
+                alertEl.className = 'message';
                 alertEl.style.display = 'none';
             }, 5000);
         }

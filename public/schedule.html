@@ -5,178 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>面试日程安排</title>
     <link rel="stylesheet" href="./common.css">
-    <style>
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background-color: var(--gray-100);
-            border-radius: var(--border-radius);
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filter-group label {
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        input[type="text"], input[type="datetime-local"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-            box-sizing: border-box;
-        }
-
-        input[type="text"]:focus, input[type="datetime-local"]:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        input[type="checkbox"] {
-            transform: scale(1.3);
-            cursor: pointer;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 0.5rem;
-        }
-
-        .status-prepared {
-            background-color: var(--success-color);
-        }
-
-        .status-completed {
-            background-color: var(--info-color);
-        }
-
-        .status-pending {
-            background-color: var(--warning-color);
-        }
-
-        /* 邮件弹窗样式 */
-        .modal {
-            display: block;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: #fff;
-            margin: 2rem auto;
-            padding: 0;
-            border: none;
-            border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow: hidden;
-            box-shadow: var(--box-shadow);
-        }
-
-        .modal-title-bar {
-            margin: 0;
-            padding: 1rem 1.5rem;
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 1.25rem;
-            font-weight: 600;
-            cursor: move;
-            user-select: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-close {
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-
-        .modal-close:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            max-height: calc(80vh - 100px);
-            overflow-y: auto;
-        }
-
-        #notesTextarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 150px;
-            box-sizing: border-box;
-        }
-
-        #notesTextarea:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        .modal-footer {
-            padding: 1rem;
-            border-top: 1px solid var(--gray-300);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .filters {
-                flex-direction: column;
-            }
-            
-            .form-actions {
-                flex-direction: column;
-            }
-        }
-    </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">跳转到主要内容</a>
     <div class="page-header">
         <div class="container">
             <h1>面试日程安排</h1>
@@ -190,53 +21,110 @@
             </a>
         </div>
         
-        <div class="card">
-            <div class="card-header">
-                <h2>面试日程列表</h2>
-            </div>
-            
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="searchInput">搜索:</label>
-                    <input type="text" id="searchInput" placeholder="搜索公司名称、岗位等..." style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; width: 100%;">
+        <main id="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 id="form-title">面试日程安排</h2>
                 </div>
-                <div class="filter-group">
-                    <label for="sortOrder">排序方式:</label>
-                    <select id="sortOrder" style="min-height: calc(2.25rem + 2px); padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-size: 1rem; background-color: white;">
-                        <option value="asc">时间升序（最早优先）</option>
-                        <option value="desc">时间降序（最新优先）</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label> </label>
-                    <div class="action-buttons" style="margin: 0;">
-                        <button type="button" class="btn btn-success" onclick="addRow()" style="min-height: calc(2.25rem + 2px);">
-                            + 添加面试
-                        </button>
-                        <button type="button" class="btn btn-primary" onclick="saveData()" style="min-height: calc(2.25rem + 2px);">
-                            保存数据
-                        </button>
-                        <button type="button" class="btn btn-info" onclick="exportToCSV()" style="min-height: calc(2.25rem + 2px);">
-                            导出CSV
-                        </button>
+                
+                <form id="interviewForm" aria-labelledby="form-title">
+                    <input type="hidden" id="recordId">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="companyName">公司名称 *</label>
+                                <input type="text" id="companyName" class="form-control" required aria-describedby="companyNameHelp">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="position">面试岗位</label>
+                                <input type="text" id="position" class="form-control" aria-describedby="positionHelp">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="interviewDate">面试时间 *</label>
+                                <input type="datetime-local" id="interviewDate" class="form-control" required aria-describedby="interviewDateHelp">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="preparation">面试状态 *</label>
+                                <select id="preparation" class="form-control" required aria-describedby="preparationHelp">
+                                    <option value="">请选择状态</option>
+                                    <option value="一面">一面</option>
+                                    <option value="二面">二面</option>
+                                    <option value="三面">三面</option>
+                                    <option value="四面">四面</option>
+                                    <option value="五面">五面</option>
+                                    <option value="六面">六面</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="completion">面试结果 *</label>
+                                <select id="completion" class="form-control" required aria-describedby="completionHelp">
+                                    <option value="">请选择结果</option>
+                                    <option value="等待面试">等待面试</option>
+                                    <option value="已过">已过</option>
+                                    <option value="已挂">已挂</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label for="searchInput">搜索:</label>
+                            <div class="search-container">
+                                <input type="text" id="searchInput" class="form-control" placeholder="搜索公司名称、岗位、状态等...">
+                                <button id="searchBtn" class="btn btn-primary">搜索</button>
+                            </div>
+                        </div>
+                        <div class="filter-group">
+                            <label for="sortOrder">排序方式:</label>
+                            <select id="sortOrder" class="form-control">
+                                <option value="desc">时间降序（最新优先）</option>
+                                <option value="asc">时间升序（最早优先）</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>操作:</label>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-success btn-sm" id="saveBtn">
+                                    保存记录
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm" id="resetBtn">
+                                    重置
+                                </button>
+                                <button type="button" class="btn btn-info btn-sm" id="exportBtn">
+                                    导出CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
             
-            <div id="message"></div>
-            
-            <form id="interviewForm">
+            <div class="card">
+                <div class="card-header">
+                    <h2>面试记录列表</h2>
+                </div>
+                
+                <div id="message" class="message" role="status" aria-live="polite"></div>
+                
                 <div class="table-container">
-                    <table id="interviewTable">
+                    <table id="interviewTable" class="interview-table" aria-label="面试记录列表">
                         <thead>
                             <tr>
-                                <th>公司名称</th>
-                                <th>岗位</th>
-                                <th>面试时间</th>
-                                <th>面试状态</th>
-                                <th>面试结果</th>
-                                <th>备注</th>
-                                <th>操作</th>
+                                <th scope="col">公司名称</th>
+                                <th scope="col">面试岗位</th>
+                                <th scope="col">面试时间</th>
+                                <th scope="col">面试状态</th>
+                                <th scope="col">面试结果</th>
+                                <th scope="col">备注</th>
+                                <th scope="col">操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -244,19 +132,20 @@
                         </tbody>
                     </table>
                 </div>
-            </form>
-        </div>
-    </div>
+            </div>
 
     <!-- 备注弹窗 -->
-    <div id="notesModal" class="modal" style="display: none;">
+    <div id="notesModal" class="modal">
         <div class="modal-content" id="notesModalContent">
-            <div class="modal-title-bar" id="notesModalTitleBar">
+            <div class="modal-title-bar">
                 <h2>添加/编辑备注</h2>
                 <span class="modal-close" onclick="closeNotesModal()">×</span>
             </div>
             <div class="modal-body">
-                <textarea id="notesTextarea" placeholder="请输入备注内容..." rows="10"></textarea>
+                <textarea id="notesTextarea" placeholder="请输入备注内容..."></textarea>
+                <div class="char-count">
+                    <span id="charCounter">0</span> 字符
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeNotesModal()">取消</button>
@@ -290,21 +179,38 @@
         // API基础URL
         const API_BASE = '/api';
         
+        // 格式化日期显示
+        function formatInterviewDate(dateString) {
+            return dateString ? new Date(dateString).toLocaleString('zh-CN') : '';
+        }
+        
         // 显示消息函数
         function showMessage(text, type) {
             const messageEl = document.getElementById('message');
             messageEl.textContent = text;
             messageEl.className = 'message ' + type + ' show';
             
-            // 3秒后自动清除消息
-            setTimeout(() => {
-                messageEl.textContent = '';
-                messageEl.className = '';
-            }, 3000);
+            // loading消息不自动清除，其他消息5秒后自动清除
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                    messageEl.className = '';
+                }, 5000);
+            }
         }
 
         // 页面加载时从后端API获取数据
-        window.onload = function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            
+            // 添加事件监听器
+            document.getElementById('saveBtn').addEventListener('click', saveRecord);
+            document.getElementById('resetBtn').addEventListener('click', resetForm);
+            document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                loadData();
+            });
+            
             // 为排序选择器添加事件监听器
             document.getElementById('sortOrder').addEventListener('change', function() {
                 const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
@@ -319,12 +225,15 @@
                 filterTable();
             });
             
-            loadData();
-        };
-
-        // 监听页面卸载事件，自动保存数据
-        window.addEventListener('beforeunload', function(e) {
-            saveData();
+            // 为搜索框添加回车键事件监听器
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    loadData();
+                }
+            });
+            
+            // 为备注文本区域添加字符计数监听器
+            document.getElementById('notesTextarea').addEventListener('input', updateCharCount);
         });
 
         // 按时间排序表格行
@@ -332,12 +241,13 @@
             const sortOrder = document.getElementById('sortOrder').value;
             
             rows.sort((a, b) => {
-                // 获取每行的时间输入框的值
-                const dateInputA = a.cells[2].getElementsByTagName('input')[0];
-                const dateInputB = b.cells[2].getElementsByTagName('input')[0];
+                // 获取每行的时间文本内容
+                const dateTextA = a.cells[2].textContent;
+                const dateTextB = b.cells[2].textContent;
                 
-                const dateA = dateInputA && dateInputA.value ? new Date(dateInputA.value) : new Date(0);
-                const dateB = dateInputB && dateInputB.value ? new Date(dateInputB.value) : new Date(0);
+                // 将日期字符串转换为Date对象进行比较
+                const dateA = dateTextA ? new Date(dateTextA) : new Date(0);
+                const dateB = dateTextB ? new Date(dateTextB) : new Date(0);
                 
                 if (sortOrder === 'asc') {
                     return dateA - dateB;
@@ -358,11 +268,26 @@
         function loadData() {
             const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
             
-            // 显示加载状态
-            table.innerHTML = '<tr><td colspan="7" style="text-align: center;">正在加载数据...</td></tr>';
-            showMessage('正在加载面试日程数据...', 'loading');
+            // 获取搜索关键词
+            const keyword = document.getElementById('searchInput').value;
             
-            fetch(`${API_BASE}/interviews`)
+            // 显示加载状态
+            table.innerHTML = '<tr><td colspan="7" class="loading">加载中...</td></tr>';
+            
+            // 显示正在搜索的消息
+            if (keyword) {
+                showMessage('正在搜索面试日程...', 'loading');
+            } else {
+                showMessage('正在加载面试日程数据...', 'loading');
+            }
+            
+            // 构建API URL
+            let apiUrl = `${API_BASE}/interviews`;
+            if (keyword) {
+                apiUrl = `${API_BASE}/interviews/search?keyword=${encodeURIComponent(keyword)}`;
+            }
+            
+            fetch(apiUrl)
                 .then(response => {
                     // 检查响应状态
                     if (response.status === 503) {
@@ -373,6 +298,9 @@
                     return response.json();
                 })
                 .then(data => {
+                    // 检查是否有数据返回
+                    if (!data) return;
+                    
                     // 保存原始数据
                     originalData = data;
                     
@@ -381,16 +309,16 @@
                     
                     if (data.length === 0) {
                         table.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无面试日程数据</td></tr>';
-                        showMessage('加载完成，暂无面试日程数据', 'success');
+                        if (keyword) {
+                            showMessage(`搜索完成，找到 0 条匹配的记录`, 'success');
+                        } else {
+                            showMessage('加载完成，暂无面试日程数据', 'success');
+                        }
                         return;
                     }
                     
                     data.forEach(item => {
-                        // 兼容旧数据格式
-                        const preparation = item.preparation || '';
-                        const completion = item.completion || '';
-                        
-                        addRowWithData(item.company, item.position, item.datetime, preparation, completion, item.notes);
+                        addRowToTable(item);
                     });
                     
                     // 获取排序顺序
@@ -402,7 +330,11 @@
                     // 按时间排序
                     sortTableRows(rows);
                     
-                    showMessage(`加载完成，共找到 ${data.length} 条面试日程`, 'success');
+                    if (keyword) {
+                        showMessage(`搜索完成，找到 ${data.length} 条匹配的记录`, 'success');
+                    } else {
+                        showMessage(`加载完成，共找到 ${data.length} 条面试日程`, 'success');
+                    }
                 })
                 .catch(error => {
                     console.error('加载数据失败:', error);
@@ -411,65 +343,54 @@
                 });
         }
 
-        // 添加带数据的新行
-        function addRowWithData(company, position, datetime, preparation, completion, notes) {
+        // 添加行到表格（使用DOM方法而不是innerHTML以提高安全性）
+        function addRowToTable(item) {
             const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
             const newRow = table.insertRow();
             
-            // 面试状态选项
-            const statusOptions = [
-                { value: '', text: '请选择' },
-                { value: '一面', text: '一面' },
-                { value: '二面', text: '二面' },
-                { value: '三面', text: '三面' },
-                { value: '四面', text: '四面' },
-                { value: '五面', text: '五面' },
-                { value: '六面', text: '六面' }
-            ];
+            // 格式化日期显示
+            const formattedDate = formatInterviewDate(item.datetime);
             
-            // 面试结果选项
-            const resultOptions = [
-                { value: '', text: '请选择' },
-                { value: '等待面试', text: '等待面试' },
-                { value: '已过', text: '已过' },
-                { value: '已挂', text: '已挂' }
-            ];
+            // 创建单元格
+            const companyCell = newRow.insertCell(0);
+            const positionCell = newRow.insertCell(1);
+            const dateCell = newRow.insertCell(2);
+            const statusCell = newRow.insertCell(3);
+            const resultCell = newRow.insertCell(4);
+            const notesCell = newRow.insertCell(5);
+            const actionCell = newRow.insertCell(6);
             
-            // 构建面试状态下拉选项
-            let statusSelect = `<select>`;
-            statusOptions.forEach(option => {
-                const selected = preparation === option.value ? 'selected' : '';
-                statusSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
-            });
-            statusSelect += `</select>`;
-            
-            // 构建面试结果下拉选项
-            let resultSelect = `<select>`;
-            resultOptions.forEach(option => {
-                const selected = completion === option.value ? 'selected' : '';
-                resultSelect += `<option value="${option.value}" ${selected}>${option.text}</option>`;
-            });
-            resultSelect += `</select>`;
-            
-            newRow.innerHTML = `
-                <td><input type="text" value="${company || ''}"></td>
-                <td><input type="text" value="${position || ''}"></td>
-                <td><input type="datetime-local" value="${datetime || ''}"></td>
-                <td>${statusSelect}</td>
-                <td>${resultSelect}</td>
-                <td><button type="button" class="btn btn-secondary" onclick="openNotesModal(this)">备注</button></td>
-                <td>
-                    <button type="button" class="btn btn-danger" onclick="deleteRow(this)">删除</button>
-                </td>
-            `;
+            // 填充单元格内容
+            companyCell.textContent = item.company;
+            positionCell.textContent = item.position || '';
+            dateCell.textContent = formattedDate;
+            statusCell.textContent = item.preparation || '';
+            resultCell.textContent = item.completion || '';
+            notesCell.innerHTML = '<div class="notes-cell"><button type="button" class="btn btn-secondary btn-sm" onclick="openNotesModal(this)">备注</button></div>';
             
             // 存储备注内容在行元素上
-            newRow.notes = notes || '';
-        }
-        
-        // 标记数据已更改
-        function markDataChanged() {
-            // 不再需要标记数据更改，因为会自动保存
+            newRow.notes = item.notes || '';
+            
+            // 创建操作按钮
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'btn btn-warning btn-sm';
+            editBtn.textContent = '编辑';
+            editBtn.onclick = () => editRecord(item.company, item.position, item.datetime, item.preparation, item.completion);
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-danger btn-sm';
+            deleteBtn.textContent = '删除';
+            deleteBtn.onclick = () => deleteRecord(item.company, item.position, item.datetime);
+            
+            // 添加按钮到操作单元格
+            const actionDiv = document.createElement('div');
+            actionDiv.className = 'action-buttons';
+            actionDiv.appendChild(editBtn);
+            actionDiv.appendChild(deleteBtn);
+            actionCell.appendChild(actionDiv);
+            actionCell.className = 'action-cell';
         }
         
         // 根据搜索关键词筛选表格
@@ -483,7 +404,7 @@
             // 如果没有搜索词，显示所有数据
             if (!searchTerm) {
                 originalData.forEach(item => {
-                    addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion, item.notes);
+                    addRowToTable(item);
                 });
                 
                 // 获取排序顺序
@@ -503,7 +424,10 @@
             const filteredData = originalData.filter(item => {
                 return (
                     (item.company && item.company.toLowerCase().includes(searchTerm)) ||
-                    (item.position && item.position.toLowerCase().includes(searchTerm))
+                    (item.position && item.position.toLowerCase().includes(searchTerm)) ||
+                    (item.preparation && item.preparation.toLowerCase().includes(searchTerm)) ||
+                    (item.completion && item.completion.toLowerCase().includes(searchTerm)) ||
+                    (item.datetime && formatInterviewDate(item.datetime).toLowerCase().includes(searchTerm))
                 );
             });
             
@@ -515,7 +439,7 @@
             }
             
             filteredData.forEach(item => {
-                addRowWithData(item.company, item.position, item.datetime, item.preparation, item.completion, item.notes);
+                addRowToTable(item);
             });
             
             // 获取排序顺序
@@ -530,59 +454,79 @@
             showMessage(`找到 ${filteredData.length} 条匹配的记录`, 'success');
         }
         
-        // 添加空行
-        function addRow() {
-            addRowWithData('', '', '', '', '', '');
-            showMessage('已添加新行，请填写面试信息', 'success');
+        // 编辑记录
+        function editRecord(company, position, interviewDate, preparation, completion) {
+            // 设置表单标题
+            document.getElementById('form-title').textContent = '编辑面试记录';
             
-            // 获取所有数据行
-            const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
-            const rows = Array.from(table.rows);
+            // 填充表单数据
+            document.getElementById('recordId').value = 'editing'; // 标记为编辑模式
+            document.getElementById('companyName').value = company;
+            document.getElementById('position').value = position || '';
+            document.getElementById('interviewDate').value = interviewDate ? interviewDate.slice(0, 16) : '';
+            document.getElementById('preparation').value = preparation || '';
+            document.getElementById('completion').value = completion || '';
             
-            // 按时间排序
-            sortTableRows(rows);
+            // 显示消息
+            showMessage(`正在编辑记录: ${company}`, 'success');
+            
+            // 滚动到表单顶部
+            document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
         }
         
-        // 删除行
-        function deleteRow(button) {
-            if (confirm('确定要删除这条面试记录吗？')) {
-                const row = button.closest('tr');
-                row.parentNode.removeChild(row);
-                // 显示正在删除的消息
-                showMessage('记录已删除，页面关闭时将自动保存更改', 'success');
+        // 重置表单
+        function resetForm() {
+            // 重置表单标题
+            document.getElementById('form-title').textContent = '面试日程安排';
+            
+            // 清空表单数据
+            document.getElementById('recordId').value = '';
+            document.getElementById('interviewForm').reset();
+            
+            // 显示消息
+            showMessage('表单已重置', 'success');
+        }
+        
+        // 保存记录（添加或更新）
+        function saveRecord() {
+            const company = document.getElementById('companyName').value;
+            const position = document.getElementById('position').value;
+            const interviewDate = document.getElementById('interviewDate').value;
+            const preparation = document.getElementById('preparation').value;
+            const completion = document.getElementById('completion').value;
+            
+            // 验证必填字段
+            if (!company || !interviewDate || !preparation || !completion) {
+                showMessage('请填写所有必填字段', 'error');
+                return;
             }
-        }
-        
-        // 保存数据到后端
-        function saveData() {
-            const table = document.getElementById("interviewTable");
-            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-            const data = [];
             
-            for (let i = 0; i < rows.length; i++) {
-                const cells = rows[i].getElementsByTagName('td');
-                const company = cells[0].getElementsByTagName('input')[0].value;
-                const position = cells[1].getElementsByTagName('input')[0].value;
-                const datetime = cells[2].getElementsByTagName('input')[0].value;
-                const preparation = cells[3].getElementsByTagName('select')[0].value;
-                const completion = cells[4].getElementsByTagName('select')[0].value;
-                const notes = rows[i].notes || '';
-                
-                // 只保存非空行
-                if (company || position || datetime || preparation || completion) {
-                    data.push({
-                        company: company,
-                        position: position,
-                        datetime: datetime,
-                        preparation: preparation,
-                        completion: completion,
-                        notes: notes
-                    });
+            // 获取当前行的备注内容（如果是编辑模式）
+            let notes = '';
+            const recordId = document.getElementById('recordId').value;
+            if (recordId) {
+                // 在编辑模式下，查找当前行以获取备注
+                const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
+                for (let i = 0; i < table.rows.length; i++) {
+                    const row = table.rows[i];
+                    // 检查是否是正在编辑的行
+                    if (row.cells[0].textContent === company && 
+                        row.cells[1].textContent === (position || '') && 
+                        row.cells[2].textContent === formatInterviewDate(interviewDate)) {
+                        notes = row.notes || '';
+                        break;
+                    }
                 }
             }
             
-            // 显示正在保存的消息
-            showMessage('正在保存数据...', 'loading');
+            const recordData = {
+                company: company,
+                position: position,
+                datetime: interviewDate,
+                preparation: preparation,
+                completion: completion,
+                notes: notes
+            };
             
             // 发送到后端API
             fetch(`${API_BASE}/interviews`, {
@@ -590,7 +534,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(recordData)
             })
             .then(response => {
                 // 检查响应状态
@@ -599,20 +543,74 @@
                     window.location.href = '/config';
                     return;
                 }
+                
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
                 return response.json();
             })
             .then(result => {
                 // 检查是否有结果返回
                 if (!result) return;
                 
-                // 重新加载数据以确保一致性
-                loadData();
-                
-                showMessage(`数据保存成功！共保存 ${data.length} 条记录`, 'success');
+                showMessage(`记录保存成功: ${company}`, 'success');
+                resetForm();
+                loadData(); // 重新加载数据
             })
             .catch(error => {
-                console.error('保存数据失败:', error);
-                showMessage('保存数据失败: ' + error.message, 'error');
+                console.error('保存记录失败:', error);
+                const errorMsg = error.error || error.message || '保存记录失败';
+                showMessage(`保存记录失败: ${errorMsg}`, 'error');
+            });
+        }
+        
+        // 删除记录
+        function deleteRecord(company, position, datetime) {
+            if (!confirm('确定要删除这条记录吗？')) {
+                return;
+            }
+            
+            // 显示正在删除的消息
+            showMessage('正在删除记录...', 'loading');
+            
+            // 构造查询参数
+            const params = new URLSearchParams({
+                company: company,
+                position: position || '',
+                datetime: datetime
+            });
+            
+            // 发送到后端API
+            fetch(`${API_BASE}/interviews?${params}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                // 检查响应状态
+                if (response.status === 503) {
+                    // 数据库未初始化，重定向到配置页面
+                    window.location.href = '/config';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    return response.json().then(err => { throw err; });
+                }
+                return response.json();
+            })
+            .then(result => {
+                // 检查是否有结果返回
+                if (!result) return;
+                
+                showMessage('记录删除成功！', 'success');
+                loadData(); // 重新加载数据
+            })
+            .catch(error => {
+                console.error('删除记录失败:', error);
+                const errorMsg = error.error || error.message || '删除记录失败';
+                showMessage(`删除记录失败: ${errorMsg}`, 'error');
             });
         }
         
@@ -630,31 +628,43 @@
         function openNotesModal(button) {
             currentRow = button.closest('tr');
             const notes = currentRow.notes || '';
-            document.getElementById('notesTextarea').value = notes;
+            const companyName = currentRow.cells[0].textContent || '';
+            const position = currentRow.cells[1].textContent || '';
+            
+            // 设置弹窗标题
+            const modalTitle = document.querySelector('#notesModal .modal-title-bar h2');
+            modalTitle.textContent = `备注 - ${companyName}${position ? ' (' + position + ')' : ''}`;
+            
+            const textarea = document.getElementById('notesTextarea');
+            textarea.value = notes;
             document.getElementById('notesModal').style.display = 'block';
             
-            // 重置拖动位置
+            // 重置弹窗位置
             xOffset = 0;
             yOffset = 0;
-            setTranslate(0, 0, document.getElementById('notesModalContent'));
+            const modalContent = document.getElementById('notesModalContent');
+            modalContent.style.transform = 'translate(-50%, -50%)';
             
-            // 添加拖动事件监听器
-            const modalTitleBar = document.getElementById('notesModalTitleBar');
-            modalTitleBar.addEventListener('mousedown', dragStart);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('mousemove', drag);
+            // 更新字符计数
+            updateCharCount();
+            
+            // 聚焦到文本区域
+            setTimeout(() => {
+                textarea.focus();
+            }, 100);
+        }
+        
+        // 更新字符计数
+        function updateCharCount() {
+            const textarea = document.getElementById('notesTextarea');
+            const charCount = textarea.value.length;
+            document.getElementById('charCounter').textContent = charCount;
         }
         
         // 关闭备注弹窗
         function closeNotesModal() {
             document.getElementById('notesModal').style.display = 'none';
             currentRow = null;
-            
-            // 移除拖动事件监听器
-            const modalTitleBar = document.getElementById('notesModalTitleBar');
-            modalTitleBar.removeEventListener('mousedown', dragStart);
-            document.removeEventListener('mouseup', dragEnd);
-            document.removeEventListener('mousemove', drag);
         }
         
         // 保存备注
@@ -662,59 +672,66 @@
             if (currentRow) {
                 const notes = document.getElementById('notesTextarea').value;
                 currentRow.notes = notes;
-                showMessage('备注已更新，页面关闭时将自动保存更改', 'success');
+                showMessage('备注保存成功', 'success');
             }
             closeNotesModal();
         }
         
-        // 拖动功能相关函数
+        // 弹窗拖动开始
         function dragStart(e) {
-            // 防止在文本区域内拖动
-            if (e.target.id === 'notesTextarea') {
-                return;
-            }
-            
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-            
-            if (e.target.id === 'notesModalTitleBar') {
+            // 只有点击标题栏时才能拖动
+            if (e.target.classList.contains('modal-title-bar') || e.target.closest('.modal-title-bar')) {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
                 isDragging = true;
-                document.getElementById('notesModalContent').style.cursor = 'grabbing';
+                e.preventDefault();
             }
         }
         
-        function dragEnd() {
-            initialX = currentX;
-            initialY = currentY;
-            
-            isDragging = false;
-            document.getElementById('notesModalContent').style.cursor = 'default';
-        }
-        
+        // 弹窗拖动中
         function drag(e) {
             if (isDragging) {
                 e.preventDefault();
                 currentX = e.clientX - initialX;
                 currentY = e.clientY - initialY;
-                
                 xOffset = currentX;
                 yOffset = currentY;
                 
-                setTranslate(currentX, currentY, document.getElementById('notesModalContent'));
+                const modalContent = document.getElementById('notesModalContent');
+                modalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
             }
         }
         
-        function setTranslate(xPos, yPos, el) {
-            el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+        // 弹窗拖动结束
+        function dragEnd() {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
         }
         
-        // 点击弹窗外部关闭弹窗
+        // 为弹窗标题栏添加拖动事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalTitleBar = document.querySelector('#notesModal .modal-title-bar');
+            if (modalTitleBar) {
+                modalTitleBar.addEventListener('mousedown', dragStart);
+            }
+        });
+        
+        // 添加鼠标事件监听器（只添加一次）
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        
+        // 点击弹窗外部关闭弹窗 - 已禁用此功能
+        /*
         window.onclick = function(event) {
             const modal = document.getElementById('notesModal');
+            const modalContent = document.getElementById('notesModalContent');
+            // 检查点击的是否是弹窗遮罩层（而不是弹窗内容）
             if (event.target === modal) {
                 closeNotesModal();
             }
-        }
+        };
+        */
         
         // 导出数据为CSV文件
         function exportToCSV() {
@@ -727,7 +744,7 @@
             }
             
             // 定义CSV列标题
-            const headers = ['公司名称', '岗位', '面试时间', '面试状态', '面试结果', '备注'];
+            const headers = ['公司名称', '面试岗位', '面试时间', '面试状态', '面试结果', '备注'];
             
             // 创建CSV内容
             let csvContent = '\uFEFF' + headers.join(',') + '\n'; // 添加BOM以支持中文
@@ -737,7 +754,7 @@
                 const row = [
                     item.company || '',
                     item.position || '',
-                    item.datetime || '',
+                    formatInterviewDate(item.datetime),
                     item.preparation || '',
                     item.completion || '',
                     item.notes || ''

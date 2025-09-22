@@ -5,247 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>企业邮件状态跟踪</title>
     <link rel="stylesheet" href="./common.css">
-    <style>
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background-color: var(--gray-100);
-            border-radius: var(--border-radius);
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filter-group label {
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
-
-        input[type="text"], input[type="date"], select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-            box-sizing: border-box;
-            min-height: calc(2.25rem + 2px);
-        }
-
-        input[type="text"]:focus, input[type="date"]:focus, select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        .select-checkbox {
-            transform: scale(1.3);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            font-style: italic;
-            color: var(--gray-600);
-        }
-
-        .email-content {
-            margin-top: 1rem;
-            padding: 1rem;
-            background-color: white;
-            border: 1px solid var(--gray-200);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow-sm);
-        }
-
-        .email-content-text {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        /* 邮件弹窗样式 */
-        .modal {
-            display: block;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background-color: #fff;
-            margin: 2rem auto;
-            padding: 0;
-            border: none;
-            border-radius: var(--border-radius);
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow: hidden;
-            box-shadow: var(--box-shadow);
-        }
-
-        .modal-title-bar {
-            margin: 0;
-            padding: 1rem 1.5rem;
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 1.25rem;
-            font-weight: 600;
-            cursor: move;
-            user-select: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-close {
-            color: white;
-            font-size: 1.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-
-        .modal-close:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            max-height: calc(80vh - 100px);
-            overflow-y: auto;
-        }
-
-        .modal-actions {
-            margin-top: 1.5rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--gray-200);
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: var(--transition);
-            box-sizing: border-box;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
-        }
-
-        .form-actions {
-            margin-top: 1.5rem;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        /* 邮件表格优化样式 */
-        .email-table {
-            width: 100%;
-            table-layout: fixed;
-            border-collapse: collapse;
-        }
-
-        .email-table th, .email-table td {
-            padding: 0.75rem;
-            text-align: left;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .email-table th:nth-child(1), .email-table td:nth-child(1) { /* 选择框列 */
-            width: 40px;
-        }
-
-        .email-table th:nth-child(2), .email-table td:nth-child(2) { /* 主题列 */
-            width: 40%;
-        }
-
-        .email-table th:nth-child(3), .email-table td:nth-child(3) { /* 发件人列 */
-            width: 20%;
-        }
-
-        .email-table th:nth-child(4), .email-table td:nth-child(4) { /* 时间列 */
-            width: 15%;
-        }
-
-        .email-table th:nth-child(5), .email-table td:nth-child(5) { /* 投递状态列 */
-            width: 100px;
-            text-align: center;
-        }
-
-        .email-table th:nth-child(6), .email-table td:nth-child(6) { /* 操作列 */
-            width: 150px;
-            text-align: center;
-        }
-
-        .table-container {
-            overflow-x: auto;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow-sm);
-        }
-
-        @media (max-width: 768px) {
-            .filters {
-                flex-direction: column;
-            }
-            
-            .tabs {
-                gap: 0.25rem;
-            }
-            
-            .tab {
-                padding: 0.5rem;
-                font-size: 0.8rem;
-            }
-            
-            .form-actions {
-                flex-direction: column;
-            }
-            
-            .table-container {
-                overflow-x: auto;
-            }
-            
-            .email-table {
-                width: 800px; /* 在小屏幕上设置固定宽度，允许水平滚动 */
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="page-header">
@@ -272,33 +31,33 @@
                 <div class="filters">
                     <div class="filter-group">
                         <label for="searchKeyword">搜索:</label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <input type="text" id="searchKeyword" placeholder="输入关键词搜索邮件主题或正文" style="flex: 1; min-height: calc(2.25rem + 2px);">
-                            <button id="searchBtn" class="btn btn-primary" style="min-height: calc(2.25rem + 2px);">搜索</button>
+                        <div class="search-container">
+                            <input type="text" id="searchKeyword" class="form-control" placeholder="输入关键词搜索邮件主题或正文">
+                            <button id="searchBtn" class="btn btn-primary btn-sm">搜索</button>
                         </div>
                     </div>
                     
                     <div class="filter-group">
                         <label for="startDate">开始日期:</label>
-                        <input type="date" id="startDate">
+                        <input type="date" id="startDate" class="form-control">
                     </div>
                     
                     <div class="filter-group">
                         <label for="endDate">结束日期:</label>
-                        <input type="date" id="endDate">
+                        <input type="date" id="endDate" class="form-control">
                     </div>
                     
                     <div class="filter-group">
                         <label for="sortOrder">排序方式:</label>
-                        <select id="sortOrder" style="min-height: calc(2.25rem + 2px);">
+                        <select id="sortOrder" class="form-control">
                             <option value="desc">时间降序（最新优先）</option>
                             <option value="asc">时间升序（最早优先）</option>
                         </select>
                     </div>
                     
                     <div class="filter-group">
-                        <label> </label>
-                        <button id="fetchEmailsBtn" class="btn btn-primary" style="min-height: calc(2.25rem + 2px);">获取邮件</button>
+                        <label>操作:</label>
+                        <button id="fetchEmailsBtn" class="btn btn-primary btn-sm">获取邮件</button>
                     </div>
                 </div>
             </div>
@@ -306,13 +65,13 @@
             <div class="card">
                 <div class="card-header">
                     <h2>邮件列表</h2>
-                    <div class="action-buttons" style="float: right; margin-top: -2rem;">
+                    <div class="email-list-actions">
                         <button class="btn btn-success" onclick="selectAll()">全选</button>
                         <button class="btn btn-danger" onclick="bulkDeleteEmails()">批量删除</button>
                     </div>
                 </div>
                 
-                <div id="message"></div>
+                <div id="message" class="message"></div>
                 
                 <div class="table-container">
                     <table id="emailTable" class="email-table">
@@ -656,7 +415,7 @@
                         
                         // 添加投递状态开关
                         const toggleButton = document.createElement('button');
-                        toggleButton.className = `btn ${email.is_delivered ? 'btn-success' : 'btn-secondary'}`;
+                        toggleButton.className = `btn ${email.is_delivered ? 'btn-success' : 'btn-secondary'} btn-sm`;
                         toggleButton.textContent = email.is_delivered ? '已投递' : '未投递';
                         toggleButton.onclick = () => toggleDeliveryStatus(email.id, !email.is_delivered, row);
                         
@@ -665,8 +424,8 @@
                         // 添加操作按钮
                         cell6.innerHTML = `
                             <div class="action-buttons">
-                                <button class="btn btn-info" onclick="viewEmailBody(${email.id})">查看正文</button>
-                                <button class="btn btn-danger" onclick="deleteEmail(${email.id})">删除</button>
+                                <button class="btn btn-info btn-sm" onclick="viewEmailBody(${email.id})">查看正文</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteEmail(${email.id})">删除</button>
                             </div>
                         `;
                     });
@@ -674,9 +433,9 @@
                     // 添加批量删除按钮
                     const bulkDeleteRow = table.insertRow();
                     const bulkDeleteCell = bulkDeleteRow.insertCell(0);
-                    bulkDeleteCell.colSpan = 5;
+                    bulkDeleteCell.colSpan = 6;
                     bulkDeleteCell.innerHTML = `
-                        <div class="action-buttons">
+                        <div class="table-bulk-actions">
                             <button class="btn btn-success" onclick="selectAll()">全选</button>
                             <button class="btn btn-danger" onclick="bulkDeleteEmails()">批量删除</button>
                         </div>
@@ -711,7 +470,7 @@
             // 添加关闭按钮
             const closeBtn = document.createElement('button');
             closeBtn.textContent = '×';
-            closeBtn.className = 'btn btn-danger';
+            closeBtn.className = 'btn btn-danger btn-sm';
             closeBtn.style.cssText = 'float: right; padding: 0.25rem 0.5rem; margin-bottom: 0.5rem;';
             closeBtn.onclick = function() {
                 contentRow.remove();
@@ -720,7 +479,7 @@
             // 添加展开/收起按钮
             const toggleBtn = document.createElement('button');
             toggleBtn.textContent = '展开';
-            toggleBtn.className = 'btn btn-primary';
+            toggleBtn.className = 'btn btn-primary btn-sm';
             toggleBtn.style.cssText = 'margin-right: 0.5rem;';
             toggleBtn.onclick = function() {
                 if (contentDiv.style.maxHeight === '200px' || contentDiv.style.maxHeight === '') {
@@ -818,10 +577,10 @@
                 });
         }
         
-        // 同步到投递汇总系统（已修改为弹窗形式）
+        // 同步到投递汇总系统（已修改为在邮件正文弹窗中直接编辑）
         function syncToDeliverySystem(emailData, emailModal) {
-            // 显示投递表单弹窗
-            showDeliveryForm(emailData, emailModal);
+            // 此函数不再需要，因为我们已经在邮件正文弹窗中集成了编辑功能
+            // 这里留空以保持向后兼容性
         }
         
         // 从发件人和主题中提取企业名称
@@ -870,136 +629,16 @@
             return "未知公司";
         }
         
-        // 显示投递表单
+        // 显示投递表单（已移除，功能集成到邮件正文弹窗中）
         function showDeliveryForm(emailData, emailModal) {
-            // 从邮件中提取建议数据
-            const suggestedCompanyName = extractCompanyName(emailData.sender, emailData.subject);
-            let suggestedStatus = '已投递';
-            
-            // 创建表单弹窗
-            const formModal = document.createElement('div');
-            formModal.className = 'modal';
-            
-            const formContent = document.createElement('div');
-            formContent.className = 'modal-content';
-            
-            // 创建标题栏（用于拖拽）
-            const titleBar = document.createElement('div');
-            titleBar.className = 'modal-title-bar';
-            titleBar.textContent = '添加到投递汇总';
-            
-            const closeBtn = document.createElement('span');
-            closeBtn.className = 'modal-close';
-            closeBtn.innerHTML = '×';
-            closeBtn.onclick = function() {
-                document.body.removeChild(formModal);
-            };
-            
-            const formDiv = document.createElement('div');
-            formDiv.className = 'modal-body';
-            formDiv.innerHTML = `
-                <div class="form-group">
-                    <label for="companyName">企业名称 *</label>
-                    <input type="text" id="companyName" class="form-input" value="${suggestedCompanyName}" required>
-                </div>
-                <div class="form-group">
-                    <label for="deliveryDate">投递时间 *</label>
-                    <input type="datetime-local" id="deliveryDate" class="form-input" value="${new Date().toISOString().slice(0, 16)}" required>
-                </div>
-                <div class="form-group">
-                    <label for="status">投递状态 *</label>
-                    <select id="status" class="form-input" required>
-                        <option value="">请选择状态</option>
-                        <option value="已投递" ${suggestedStatus === '已投递' ? 'selected' : ''}>已投递</option>
-                        <option value="简历筛选中" ${suggestedStatus === '简历筛选中' ? 'selected' : ''}>简历筛选中</option>
-                        <option value="一面通过" ${suggestedStatus === '一面通过' ? 'selected' : ''}>一面通过</option>
-                        <option value="二面通过" ${suggestedStatus === '二面通过' ? 'selected' : ''}>二面通过</option>
-                        <option value="终面通过" ${suggestedStatus === '终面通过' ? 'selected' : ''}>终面通过</option>
-                        <option value="已拒绝" ${suggestedStatus === '已拒绝' ? 'selected' : ''}>已拒绝</option>
-                        <option value="待沟通" ${suggestedStatus === '待沟通' ? 'selected' : ''}>待沟通</option>
-                    </select>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-success" id="saveDeliveryBtn">添加</button>
-                    <button type="button" class="btn btn-danger" id="cancelDeliveryBtn">取消</button>
-                </div>
-            `;
-            
-            titleBar.appendChild(closeBtn);
-            formContent.appendChild(titleBar);
-            formContent.appendChild(formDiv);
-            formModal.appendChild(formContent);
-            
-            document.body.appendChild(formModal);
-            
-            // 添加事件监听器
-            document.getElementById('saveDeliveryBtn').onclick = function() {
-                saveDeliveryRecord(emailData, formModal, emailModal);
-            };
-            
-            document.getElementById('cancelDeliveryBtn').onclick = function() {
-                document.body.removeChild(formModal);
-            };
-            
-            // 添加拖拽功能
-            let isDragging = false;
-            let currentX;
-            let currentY;
-            let initialX;
-            let initialY;
-            let xOffset = 0;
-            let yOffset = 0;
-            
-            titleBar.addEventListener('mousedown', dragStart);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('mousemove', drag);
-            
-            function dragStart(e) {
-                initialX = e.clientX - xOffset;
-                initialY = e.clientY - yOffset;
-                
-                if (e.target === titleBar) {
-                    isDragging = true;
-                    formContent.style.cursor = 'grabbing';
-                }
-            }
-            
-            function dragEnd(e) {
-                initialX = currentX;
-                initialY = currentY;
-                
-                isDragging = false;
-                formContent.style.cursor = 'default';
-            }
-            
-            function drag(e) {
-                if (isDragging) {
-                    e.preventDefault();
-                    currentX = e.clientX - initialX;
-                    currentY = e.clientY - initialY;
-                    
-                    xOffset = currentX;
-                    yOffset = currentY;
-                    
-                    setTranslate(currentX, currentY, formContent);
-                }
-            }
-            
-            function setTranslate(xPos, yPos, el) {
-                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
-            }
-            
-            // 点击遮罩关闭弹窗
-            formModal.onclick = function(event) {
-                if (event.target === formModal) {
-                    document.body.removeChild(formModal);
-                }
-            };
+            // 此函数不再需要，因为我们已经在邮件正文弹窗中集成了编辑功能
+            // 这里留空以保持向后兼容性
         }
         
         // 保存投递记录
-        function saveDeliveryRecord(emailData, formModal, emailModal) {
+        function saveDeliveryRecord(emailData, emailModal) {
             const companyName = document.getElementById('companyName').value;
+            const position = document.getElementById('position').value;
             const deliveryDate = document.getElementById('deliveryDate').value;
             const status = document.getElementById('status').value;
             
@@ -1015,6 +654,7 @@
             // 创建投递记录数据
             const deliveryData = {
                 company_name: companyName,
+                position: position,
                 delivery_date: deliveryDate,
                 status: status
             };
@@ -1070,8 +710,6 @@
                     });
                 }
                 
-                // 关闭表单弹窗
-                document.body.removeChild(formModal);
                 // 关闭邮件正文弹窗
                 document.body.removeChild(emailModal);
             })
@@ -1091,15 +729,24 @@
             // 创建弹窗遮罩
             const modal = document.createElement('div');
             modal.className = 'modal';
+            modal.id = 'emailModal';
+            modal.style.display = 'block'; // 确保弹窗显示
             
             // 创建弹窗内容
             const modalContent = document.createElement('div');
             modalContent.className = 'modal-content';
+            modalContent.id = 'emailModalContent';
+            // 增大弹窗尺寸
+            modalContent.style.maxWidth = '800px';
+            modalContent.style.maxHeight = '90vh';
             
             // 创建标题栏（用于拖拽）
             const titleBar = document.createElement('div');
             titleBar.className = 'modal-title-bar';
-            titleBar.textContent = '邮件正文';
+            
+            // 添加标题文本
+            const titleText = document.createTextNode('邮件正文');
+            titleBar.appendChild(titleText);
             
             // 创建关闭按钮
             const closeBtn = document.createElement('span');
@@ -1108,6 +755,7 @@
             closeBtn.onclick = function() {
                 document.body.removeChild(modal);
             };
+            titleBar.appendChild(closeBtn);
             
             // 创建邮件内容容器
             const contentDiv = document.createElement('div');
@@ -1124,35 +772,96 @@
                     // 如果是纯文本，转换换行符为<br>标签
                     contentDiv.innerHTML = escapeHtml(content).replace(/\n/g, '<br>');
                 }
+            }
+            
+            // 创建企业投递编辑表单容器（默认隐藏）
+            const deliveryFormDiv = document.createElement('div');
+            deliveryFormDiv.className = 'modal-body';
+            deliveryFormDiv.id = 'deliveryFormContainer';
+            deliveryFormDiv.style.display = 'none'; // 默认隐藏
+            
+            // 如果有邮件数据，添加操作按钮
+            const footerDiv = document.createElement('div');
+            footerDiv.className = 'modal-footer';
+            
+            if (emailData) {
+                // 从邮件中提取建议数据
+                const suggestedCompanyName = extractCompanyName(emailData.sender, emailData.subject);
+                let suggestedStatus = '投递完成';
                 
-                // 如果有邮件数据，添加操作按钮
-                if (emailData) {
-                    const actionDiv = document.createElement('div');
-                    actionDiv.className = 'modal-actions';
-                    
-                    // 添加与投递汇总系统联动的按钮
-                    const syncBtn = document.createElement('button');
-                    syncBtn.className = 'btn btn-warning';
-                    syncBtn.textContent = '添加到投递汇总';
-                    syncBtn.onclick = function() {
-                        syncToDeliverySystem(emailData, modal);
-                    };
-                    
-                    actionDiv.appendChild(syncBtn);
-                    contentDiv.appendChild(actionDiv);
-                }
+                // 创建企业投递编辑表单
+                deliveryFormDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="companyName">企业名称 *</label>
+                        <input type="text" id="companyName" class="form-control" value="${suggestedCompanyName}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="position">投递岗位</label>
+                        <input type="text" id="position" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="deliveryDate">投递时间 *</label>
+                        <input type="datetime-local" id="deliveryDate" class="form-control" value="${new Date().toISOString().slice(0, 16)}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">投递状态 *</label>
+                        <select id="status" class="form-control" required>
+                            <option value="">请选择状态</option>
+                            <option value="投递完成">投递完成</option>
+                            <option value="简历筛选中">简历筛选中</option>
+                            <option value="面试流程中">面试流程中</option>
+                            <option value="笔试">笔试</option>
+                            <option value="测评">测评</option>
+                            <option value="offer发放">offer发放</option>
+                            <option value="流程已结束">流程已结束</option>
+                            <option value="未知状态">未知状态</option>
+                        </select>
+                    </div>
+                `;
+                
+                // 添加编辑投递信息按钮
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn btn-info';
+                editBtn.textContent = '编辑投递信息';
+                editBtn.onclick = function() {
+                    // 显示编辑表单，隐藏邮件正文
+                    contentDiv.style.display = 'none';
+                    deliveryFormDiv.style.display = 'block';
+                    // 更新标题文本（不覆盖关闭按钮）
+                    updateModalTitle(modal, '编辑投递信息');
+                    // 确保关闭按钮存在
+                    ensureCloseButtonExists(modal);
+                    // 显示编辑弹窗的按钮布局
+                    showEditModalButtons(modal, emailData);
+                };
+                
+                footerDiv.appendChild(editBtn);
+            } else {
+                // 如果没有邮件数据，只添加关闭按钮
+                const closeBtnFooter = document.createElement('button');
+                closeBtnFooter.type = 'button';
+                closeBtnFooter.className = 'btn btn-secondary';
+                closeBtnFooter.textContent = '关闭';
+                closeBtnFooter.onclick = function() {
+                    document.body.removeChild(modal);
+                };
+                
+                footerDiv.appendChild(closeBtnFooter);
             }
             
             // 组装弹窗
             titleBar.appendChild(closeBtn);
             modalContent.appendChild(titleBar);
             modalContent.appendChild(contentDiv);
+            modalContent.appendChild(deliveryFormDiv);
+            modalContent.appendChild(footerDiv);
             modal.appendChild(modalContent);
             
             // 添加到页面
             document.body.appendChild(modal);
             
-            // 添加拖拽功能
+            // 添加拖拽功能（优化版）
             let isDragging = false;
             let currentX;
             let currentY;
@@ -1162,25 +871,17 @@
             let yOffset = 0;
             
             titleBar.addEventListener('mousedown', dragStart);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('mousemove', drag);
             
             function dragStart(e) {
-                initialX = e.clientX - xOffset;
-                initialY = e.clientY - yOffset;
-                
-                if (e.target === titleBar) {
+                // 只有点击标题栏时才能拖动
+                if (e.target.classList.contains('modal-title-bar') || e.target.closest('.modal-title-bar')) {
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
                     isDragging = true;
-                    modalContent.style.cursor = 'grabbing';
+                    // 添加 grabbing 光标样式
+                    titleBar.style.cursor = 'grabbing';
+                    e.preventDefault();
                 }
-            }
-            
-            function dragEnd(e) {
-                initialX = currentX;
-                initialY = currentY;
-                
-                isDragging = false;
-                modalContent.style.cursor = 'default';
             }
             
             function drag(e) {
@@ -1188,27 +889,120 @@
                     e.preventDefault();
                     currentX = e.clientX - initialX;
                     currentY = e.clientY - initialY;
-                    
                     xOffset = currentX;
                     yOffset = currentY;
                     
-                    setTranslate(currentX, currentY, modalContent);
+                    const modalContent = document.getElementById('emailModalContent');
+                    modalContent.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px))`;
                 }
             }
             
-            function setTranslate(xPos, yPos, el) {
-                el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+            function dragEnd() {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+                // 恢复默认光标样式
+                titleBar.style.cursor = 'grab';
             }
             
-            // 点击遮罩关闭弹窗
+            // 设置默认光标样式
+            titleBar.style.cursor = 'grab';
+            
+            // 添加鼠标事件监听器（只添加一次）
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+            
+            // 点击遮罩关闭弹窗 - 已禁用此功能
+            /*
             modal.onclick = function(event) {
                 if (event.target === modal) {
                     document.body.removeChild(modal);
                 }
             };
+            */
             
             // 返回弹窗元素，以便后续操作
             return modal;
+        }
+        
+        // 显示编辑弹窗的按钮布局
+        function showEditModalButtons(modal, emailData) {
+            const footerDiv = modal.querySelector('.modal-footer');
+            // 清空现有的按钮
+            footerDiv.innerHTML = '';
+            
+            // 添加查看邮件正文按钮
+            const viewContentBtn = document.createElement('button');
+            viewContentBtn.type = 'button';
+            viewContentBtn.className = 'btn btn-info';
+            viewContentBtn.textContent = '查看邮件正文';
+            viewContentBtn.onclick = function() {
+                // 显示邮件正文，隐藏编辑表单
+                const contentDiv = modal.querySelector('.modal-body');
+                const deliveryFormDiv = modal.querySelector('#deliveryFormContainer');
+                contentDiv.style.display = 'block';
+                deliveryFormDiv.style.display = 'none';
+                // 更新标题文本（不覆盖关闭按钮）
+                updateModalTitle(modal, '邮件正文');
+                // 显示正文弹窗的按钮布局
+                showEmailModalButtons(modal, emailData);
+            };
+            
+            // 添加保存到投递汇总按钮
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'button';
+            saveBtn.className = 'btn btn-success';
+            saveBtn.textContent = '保存到投递汇总';
+            saveBtn.onclick = function() {
+                // 验证表单数据
+                const companyName = document.getElementById('companyName').value;
+                const position = document.getElementById('position').value;
+                const deliveryDate = document.getElementById('deliveryDate').value;
+                const status = document.getElementById('status').value;
+                
+                // 验证必填字段
+                let missingFields = [];
+                if (!companyName) missingFields.push('企业名称');
+                if (!deliveryDate) missingFields.push('投递时间');
+                if (!status) missingFields.push('投递状态');
+                
+                if (missingFields.length > 0) {
+                    showMessage('请填写以下必填字段: ' + missingFields.join(', '), 'error');
+                    return;
+                }
+                
+                // 保存数据
+                saveDeliveryRecord(emailData, modal);
+            };
+            
+            footerDiv.appendChild(viewContentBtn);
+            footerDiv.appendChild(saveBtn);
+        }
+        
+        // 显示正文弹窗的按钮布局
+        function showEmailModalButtons(modal, emailData) {
+            const footerDiv = modal.querySelector('.modal-footer');
+            // 清空现有的按钮
+            footerDiv.innerHTML = '';
+            
+            // 添加编辑投递信息按钮
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'btn btn-info';
+            editBtn.textContent = '编辑投递信息';
+            editBtn.onclick = function() {
+                // 显示编辑表单，隐藏邮件正文
+                const contentDiv = modal.querySelector('.modal-body');
+                const deliveryFormDiv = modal.querySelector('#deliveryFormContainer');
+                contentDiv.style.display = 'none';
+                deliveryFormDiv.style.display = 'block';
+                // 更新标题文本（不覆盖关闭按钮）
+                updateModalTitle(modal, '编辑投递信息');
+                // 显示编辑弹窗的按钮布局
+                showEditModalButtons(modal, emailData);
+            };
+            
+            footerDiv.appendChild(editBtn);
         }
         
         // 全选/取消全选
@@ -1375,18 +1169,37 @@
             });
         }
         
-        // 切换邮件投递状态
-        function toggleDeliveryStatus(emailId, newStatus, rowElement) {
-            // 显示正在更新的消息
-            showMessage(`${newStatus ? '标记为已投递' : '标记为未投递'}...`, 'loading');
+        // 保存投递记录
+        function saveDeliveryRecord(emailData, emailModal) {
+            const companyName = document.getElementById('companyName').value;
+            const position = document.getElementById('position').value;
+            const deliveryDate = document.getElementById('deliveryDate').value;
+            const status = document.getElementById('status').value;
             
-            // 发送到后端API更新状态
-            fetch(`${API_BASE}/emails/${emailId}/delivered`, {
-                method: 'PUT',
+            // 验证必填字段
+            if (!companyName || !deliveryDate || !status) {
+                showMessage('请填写所有必填字段', 'error');
+                return;
+            }
+            
+            // 显示正在添加的消息
+            showMessage(`正在添加到投递汇总系统: ${companyName}...`, 'loading');
+            
+            // 创建投递记录数据
+            const deliveryData = {
+                company_name: companyName,
+                position: position,
+                delivery_date: deliveryDate,
+                status: status
+            };
+            
+            // 发送到投递汇总系统API
+            fetch(`${API_BASE}/deliveries`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ delivered: newStatus })
+                body: JSON.stringify(deliveryData)
             })
             .then(response => {
                 // 检查响应状态
@@ -1399,22 +1212,97 @@
                 if (response.ok) {
                     return response.json();
                 } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.json().then(err => { throw err; });
                 }
             })
             .then(result => {
                 // 检查是否有结果返回
                 if (!result) return;
                 
-                showMessage(`${newStatus ? '已标记为已投递' : '已标记为未投递'}`, 'success');
+                showMessage(`添加成功: ${companyName} 已添加到投递汇总系统`, 'success');
                 
-                // 重新加载数据以显示更新后的状态
-                loadData();
+                // 更新邮件的投递状态
+                if (emailData && emailData.id) {
+                    fetch(`${API_BASE}/emails/${emailData.id}/delivered`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ delivered: true })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error('更新邮件投递状态失败');
+                        }
+                        // 重新加载数据以显示更新后的状态
+                        loadData();
+                    })
+                    .catch(error => {
+                        console.error('更新邮件投递状态失败:', error);
+                        // 即使更新状态失败，仍然继续关闭弹窗
+                        loadData();
+                    });
+                }
+                
+                // 关闭邮件正文弹窗
+                document.body.removeChild(emailModal);
             })
             .catch(error => {
-                console.error('更新邮件投递状态失败:', error);
-                showMessage(`更新失败: ${error.message}`, 'error');
+                console.error('添加到投递汇总系统失败:', error);
+                // 检查是否是重复记录错误
+                if (error.error && error.error.includes('Duplicate')) {
+                    showMessage(`添加失败: 该记录已存在于投递汇总系统中: ${companyName}`, 'error');
+                } else {
+                    showMessage(`添加失败: ${error.error || '未知错误'}`, 'error');
+                }
             });
+        }
+        
+        // 更新弹窗标题（不覆盖关闭按钮）
+        function updateModalTitle(modal, title) {
+            const titleBar = modal.querySelector('.modal-title-bar');
+            
+            // 查找现有的关闭按钮
+            const existingCloseBtn = titleBar.querySelector('.modal-close');
+            
+            // 清空标题栏内容
+            titleBar.innerHTML = '';
+            
+            // 添加标题文本
+            const titleText = document.createTextNode(title);
+            titleBar.appendChild(titleText);
+            
+            // 如果之前有关闭按钮，重新添加它
+            if (existingCloseBtn) {
+                titleBar.appendChild(existingCloseBtn);
+            } else {
+                // 如果没有关闭按钮，创建一个新的
+                const closeBtn = document.createElement('span');
+                closeBtn.className = 'modal-close';
+                closeBtn.innerHTML = '×';
+                closeBtn.onclick = function() {
+                    document.body.removeChild(modal);
+                };
+                titleBar.appendChild(closeBtn);
+            }
+        }
+        
+        // 确保关闭按钮存在
+        function ensureCloseButtonExists(modal) {
+            const titleBar = modal.querySelector('.modal-title-bar');
+            const closeBtn = titleBar.querySelector('.modal-close');
+            
+            // 如果关闭按钮不存在，则创建一个
+            if (!closeBtn) {
+                const newCloseBtn = document.createElement('span');
+                newCloseBtn.className = 'modal-close';
+                newCloseBtn.innerHTML = '×';
+                newCloseBtn.onclick = function() {
+                    document.body.removeChild(modal);
+                };
+                // 将关闭按钮添加到标题栏的末尾
+                titleBar.appendChild(newCloseBtn);
+            }
         }
         
         // 邮件排序功能
