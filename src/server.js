@@ -293,11 +293,21 @@ app.put('/api/interviews/:id', async (req, res) => {
             return res.status(400).json({ error: '公司名称和面试时间是必填字段' });
         }
         
+        // 构造更新语句，只有在提供了notes字段时才更新它
+        let query = 'UPDATE interviews SET company = ?, position = ?, datetime = ?, preparation = ?, completion = ?';
+        let params = [data.company, data.position || '', new Date(data.datetime), data.preparation || '', data.completion || ''];
+        
+        // 只有在明确提供了notes字段时才更新它
+        if (data.notes !== undefined) {
+            query += ', notes = ?';
+            params.push(data.notes || '');
+        }
+        
+        query += ' WHERE id = ?';
+        params.push(id);
+        
         // 更新记录
-        const [result] = await interviewDb.query(
-            'UPDATE interviews SET company = ?, position = ?, datetime = ?, preparation = ?, completion = ?, notes = ? WHERE id = ?',
-            [data.company, data.position || '', new Date(data.datetime), data.preparation || '', data.completion || '', data.notes || '', id]
-        );
+        const [result] = await interviewDb.query(query, params);
         
         if (result.affectedRows === 0) {
             logMessage('未找到要更新的记录', 'WARN');
@@ -345,6 +355,42 @@ app.delete('/api/interviews/:id', async (req, res) => {
     } catch (err) {
         logMessage(`删除面试数据失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '删除面试数据失败: ' + err.message });
+    }
+});
+
+// 更新面试备注
+app.put('/api/interviews/:id/notes', async (req, res) => {
+    try {
+        if (!interviewDb) {
+            logMessage('数据库未初始化', 'WARN');
+            return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
+        }
+    
+        const { id } = req.params;
+        const { notes } = req.body;
+        
+        // 检查ID是否为有效数字
+        if (!/^[0-9]+$/.test(id)) {
+            logMessage('无效的记录ID', 'WARN');
+            return res.status(400).json({ error: '无效的记录ID' });
+        }
+        
+        // 更新备注
+        const [result] = await interviewDb.query(
+            'UPDATE interviews SET notes = ? WHERE id = ?',
+            [notes || '', id]
+        );
+        
+        if (result.affectedRows === 0) {
+            logMessage('未找到要更新备注的记录', 'WARN');
+            return res.status(404).json({ error: '未找到要更新备注的记录' });
+        }
+        
+        logMessage(`更新面试备注成功，ID: ${id}`);
+        res.json({ message: '备注更新成功' });
+    } catch (err) {
+        logMessage(`更新面试备注失败: ${err.message}`, 'ERROR');
+        res.status(500).json({ error: '更新面试备注失败: ' + err.message });
     }
 });
 
@@ -754,10 +800,26 @@ app.put('/api/deliveries/:id', async (req, res) => {
             return res.status(400).json({ error: '缺少必要字段' });
         }
     
-        const [result] = await deliveryDb.query(
-            'UPDATE deliveries SET company_name = ?, position = ?, delivery_date = ?, status = ?, notes = ?, email_id = ? WHERE id = ?',
-            [company_name, position || '', delivery_date, status, notes || '', email_id || null, id]
-        );
+        // 构造更新语句，只有在提供了notes字段时才更新它
+        let query = 'UPDATE deliveries SET company_name = ?, position = ?, delivery_date = ?, status = ?';
+        let params = [company_name, position || '', delivery_date, status];
+        
+        // 只有在明确提供了notes字段时才更新它
+        if (notes !== undefined) {
+            query += ', notes = ?';
+            params.push(notes || '');
+        }
+        
+        // email_id字段总是更新（如果提供了）
+        if (email_id !== undefined) {
+            query += ', email_id = ?';
+            params.push(email_id || null);
+        }
+        
+        query += ' WHERE id = ?';
+        params.push(id);
+        
+        const [result] = await deliveryDb.query(query, params);
     
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: '投递记录未找到' });
@@ -814,6 +876,37 @@ app.delete('/api/deliveries/:id', async (req, res) => {
     } catch (err) {
         logMessage(`删除投递记录失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '删除投递记录失败' });
+    }
+});
+
+// 更新投递备注
+app.put('/api/deliveries/:id/notes', async (req, res) => {
+    try {
+        if (!deliveryDb) {
+            return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
+        }
+    
+        const { id } = req.params;
+        const { notes } = req.body;
+        
+        if (!/^[0-9]+$/.test(id)) {
+            return res.status(400).json({ error: '无效的投递ID' });
+        }
+        
+        const [result] = await deliveryDb.query(
+            'UPDATE deliveries SET notes = ? WHERE id = ?',
+            [notes || '', id]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: '投递记录未找到' });
+        }
+        
+        logMessage(`更新投递备注成功，ID: ${id}`);
+        res.json({ message: '备注更新成功' });
+    } catch (err) {
+        logMessage(`更新投递备注失败: ${err.message}`, 'ERROR');
+        res.status(500).json({ error: '更新投递备注失败' });
     }
 });
 

@@ -491,22 +491,12 @@
                 return;
             }
             
-            // 获取当前行的备注信息（如果是编辑模式）
-            let notes = '';
-            if (id) {
-                // 在编辑模式下，从表格行中获取备注
-                const row = document.querySelector(`tr[data-id="${id}"]`);
-                if (row) {
-                    notes = row.notes || '';
-                }
-            }
-            
+            // 构造不包含notes字段的记录数据
             const recordData = {
                 company_name: companyName,
                 position: position,
                 delivery_date: deliveryDate,
-                status: status,
-                notes: notes
+                status: status
             };
             
             let url = `${API_BASE}/deliveries`;
@@ -654,8 +644,44 @@
         function saveNotes() {
             if (currentRow) {
                 const notes = document.getElementById('notesTextarea').value;
+                const id = currentRow.dataset.id;
+                const companyName = currentRow.cells[1].textContent || '';
+                
+                // 更新前端显示
                 currentRow.notes = notes;
                 showMessage('备注保存成功', 'success');
+                
+                // 如果有ID，则直接更新数据库中的备注
+                if (id) {
+                    fetch(`${API_BASE}/deliveries/${id}/notes`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ notes: notes })
+                    })
+                    .then(response => {
+                        if (response.status === 503) {
+                            // 数据库未初始化，重定向到配置页面
+                            window.location.href = '/config';
+                            return;
+                        }
+                        
+                        if (!response.ok) {
+                            return response.json().then(err => { throw err; });
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                        if (!result) return;
+                        showMessage('备注已保存到数据库', 'success');
+                    })
+                    .catch(error => {
+                        console.error('保存备注失败:', error);
+                        const errorMsg = error.error || '保存备注失败';
+                        showMessage(`保存备注失败: ${errorMsg}`, 'error');
+                    });
+                }
             }
             closeNotesModal();
         }
