@@ -394,6 +394,46 @@ app.put('/api/interviews/:id/notes', async (req, res) => {
     }
 });
 
+// 面试记录搜索API
+app.get('/api/interviews/search', async (req, res) => {
+    try {
+        logMessage('收到搜索面试数据请求');
+        if (!interviewDb) {
+            logMessage('数据库未初始化', 'WARN');
+            return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
+        }
+    
+        const { keyword } = req.query;
+        let rows;
+    
+        if (!keyword) {
+            [rows] = await interviewDb.query('SELECT * FROM interviews ORDER BY datetime DESC');
+            logMessage(`返回所有面试数据，共 ${rows.length} 条记录`);
+        } else {
+            [rows] = await interviewDb.query(
+                'SELECT * FROM interviews WHERE company LIKE ? OR position LIKE ? OR preparation LIKE ? OR completion LIKE ? ORDER BY datetime DESC',
+                [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`]
+            );
+            logMessage(`搜索关键词 "${keyword}"，返回 ${rows.length} 条匹配记录`);
+        }
+    
+        const data = rows.map(row => ({
+            id: row.id,
+            company: row.company,
+            position: row.position,
+            datetime: row.datetime,
+            preparation: row.preparation,
+            completion: row.completion,
+            notes: row.notes || ''
+        }));
+    
+        res.json(data);
+    } catch (err) {
+        logMessage(`搜索面试数据失败: ${err.message}`, 'ERROR');
+        res.status(500).json({ error: '搜索面试数据失败' });
+    }
+});
+
 // 邮件相关API
 app.get('/api/emails', async (req, res) => {
     try {
@@ -440,8 +480,8 @@ app.get('/api/emails/search', async (req, res) => {
             logMessage(`返回所有邮件数据，共 ${rows.length} 条记录`);
         } else {
             [rows] = await emailDb.query(
-                'SELECT *, delivered as is_delivered FROM all_emails WHERE subject LIKE ? OR body LIKE ? ORDER BY send_date DESC',
-                [`%${keyword}%`, `%${keyword}%`]
+                'SELECT *, delivered as is_delivered FROM all_emails WHERE subject LIKE ? OR body LIKE ? OR (delivered = 1 AND ? LIKE "%已投递%") OR (delivered = 0 AND ? LIKE "%未投递%") ORDER BY send_date DESC',
+                [`%${keyword}%`, `%${keyword}%`, keyword, keyword]
             );
             logMessage(`搜索关键词 "${keyword}"，返回 ${rows.length} 条匹配记录`);
         }
@@ -932,6 +972,46 @@ app.put('/api/deliveries/:id/notes', async (req, res) => {
     } catch (err) {
         logMessage(`更新投递备注失败: ${err.message}`, 'ERROR');
         res.status(500).json({ error: '更新投递备注失败' });
+    }
+});
+
+// 投递记录搜索API
+app.get('/api/deliveries/search', async (req, res) => {
+    try {
+        logMessage('收到搜索投递数据请求');
+        if (!deliveryDb) {
+            logMessage('数据库未初始化', 'WARN');
+            return res.status(503).json({ error: '数据库未初始化，请先配置数据库连接信息' });
+        }
+    
+        const { keyword } = req.query;
+        let rows;
+    
+        if (!keyword) {
+            [rows] = await deliveryDb.query('SELECT * FROM deliveries ORDER BY delivery_date DESC');
+            logMessage(`返回所有投递数据，共 ${rows.length} 条记录`);
+        } else {
+            [rows] = await deliveryDb.query(
+                'SELECT * FROM deliveries WHERE company_name LIKE ? OR position LIKE ? OR status LIKE ? ORDER BY delivery_date DESC',
+                [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`]
+            );
+            logMessage(`搜索关键词 "${keyword}"，返回 ${rows.length} 条匹配记录`);
+        }
+    
+        const data = rows.map(row => ({
+            id: row.id,
+            company_name: row.company_name,
+            position: row.position || '',
+            delivery_date: row.delivery_date,
+            status: row.status,
+            notes: row.notes || '',
+            email_id: row.email_id
+        }));
+    
+        res.json(data);
+    } catch (err) {
+        logMessage(`搜索投递数据失败: ${err.message}`, 'ERROR');
+        res.status(500).json({ error: '搜索投递数据失败' });
     }
 });
 

@@ -81,7 +81,7 @@
                             <label for="searchInput">搜索:</label>
                             <div class="search-container">
                                 <input type="text" id="searchInput" class="form-control" placeholder="搜索公司名称、岗位、状态等...">
-                                <button id="searchBtn" class="btn btn-primary">搜索</button>
+                                <button type="button" id="searchBtn" class="btn btn-primary">搜索</button>
                             </div>
                         </div>
                         <div class="filter-group">
@@ -222,11 +222,6 @@
                 sortTableRows(rows);
             });
             
-            // 为搜索输入框添加事件监听器
-            document.getElementById('searchInput').addEventListener('input', function() {
-                filterTable();
-            });
-            
             // 为搜索框添加回车键事件监听器
             document.getElementById('searchInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -271,7 +266,7 @@
             const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
             
             // 获取搜索关键词
-            const keyword = document.getElementById('searchInput').value;
+            const keyword = document.getElementById('searchInput').value.trim();
             
             // 显示加载状态
             table.innerHTML = '<tr><td colspan="7" class="loading">加载中...</td></tr>';
@@ -297,11 +292,17 @@
                         window.location.href = '/config';
                         return;
                     }
+                    // 检查响应是否成功
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
                     return response.json();
                 })
                 .then(data => {
                     // 检查是否有数据返回
-                    if (!data) return;
+                    if (!data) {
+                        data = []; // 确保data是一个数组
+                    }
                     
                     // 保存原始数据
                     originalData = data;
@@ -318,6 +319,9 @@
                         }
                         return;
                     }
+                    
+                    // 清空表格
+                    table.innerHTML = '';
                     
                     data.forEach(item => {
                         addRowToTable(item);
@@ -340,8 +344,8 @@
                 })
                 .catch(error => {
                     console.error('加载数据失败:', error);
-                    table.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">加载数据失败: ' + error.message + '</td></tr>';
-                    showMessage('加载数据失败: ' + error.message, 'error');
+                    table.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">加载数据失败: ' + (error.message || '未知错误') + '</td></tr>';
+                    showMessage('加载数据失败: ' + (error.message || '未知错误'), 'error');
                 });
         }
 
@@ -400,63 +404,8 @@
         
         // 根据搜索关键词筛选表格
         function filterTable() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const table = document.getElementById("interviewTable").getElementsByTagName('tbody')[0];
-            
-            // 清空表格
-            table.innerHTML = '';
-            
-            // 如果没有搜索词，显示所有数据
-            if (!searchTerm) {
-                originalData.forEach(item => {
-                    addRowToTable(item);
-                });
-                
-                // 获取排序顺序
-                const sortOrder = document.getElementById('sortOrder').value;
-                
-                // 获取所有数据行
-                const rows = Array.from(table.rows);
-                
-                // 按时间排序
-                sortTableRows(rows);
-                
-                showMessage(`共找到 ${originalData.length} 条面试日程`, 'success');
-                return;
-            }
-            
-            // 筛选数据
-            const filteredData = originalData.filter(item => {
-                return (
-                    (item.company && item.company.toLowerCase().includes(searchTerm)) ||
-                    (item.position && item.position.toLowerCase().includes(searchTerm)) ||
-                    (item.preparation && item.preparation.toLowerCase().includes(searchTerm)) ||
-                    (item.completion && item.completion.toLowerCase().includes(searchTerm)) ||
-                    (item.datetime && formatInterviewDate(item.datetime).toLowerCase().includes(searchTerm))
-                );
-            });
-            
-            // 显示筛选后的数据
-            if (filteredData.length === 0) {
-                table.innerHTML = '<tr><td colspan="7" style="text-align: center;">未找到匹配的记录</td></tr>';
-                showMessage('未找到匹配的记录', 'success');
-                return;
-            }
-            
-            filteredData.forEach(item => {
-                addRowToTable(item);
-            });
-            
-            // 获取排序顺序
-            const sortOrder = document.getElementById('sortOrder').value;
-            
-            // 获取所有数据行
-            const rows = Array.from(table.rows);
-            
-            // 按时间排序
-            sortTableRows(rows);
-            
-            showMessage(`找到 ${filteredData.length} 条匹配的记录`, 'success');
+            // 此函数已被弃用，搜索现在通过 loadData() 函数处理
+            loadData();
         }
         
         // 编辑记录
